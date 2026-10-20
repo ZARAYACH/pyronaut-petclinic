@@ -299,6 +299,90 @@ def test_visit_search_matches_reference_criteria_behavior(client):
         assert response.json() == []
 
 
+def test_clinic_spatial_queries_and_boolean_filters(client):
+    page = client.get("/clinics")
+    assert page.status_code == 200, page.text
+    assert 'id="clinic-search-form"' in page.text
+    assert "clinic-map" in page.text
+    origin = {"longitude": -89.3840, "latitude": 43.0745, "radiusMeters": 350}
+    nearby = client.post("/clinics/nearby", json=origin)
+    assert nearby.status_code == 200, nearby.text
+    assert {c["name"] for c in nearby.json()} == {"Downtown Madison Pet Clinic", "Capitol Square Pet Clinic"}
+    expanded = client.post("/clinics/nearby", json={**origin, "radiusMeters": 5000, "acceptingNewPatients": True, "emergencyService": True})
+    assert expanded.status_code == 200, expanded.text
+    assert all(c["acceptingNewPatients"] and c["emergencyService"] for c in expanded.json())
+    assert {c["name"] for c in expanded.json()} >= {"Downtown Madison Pet Clinic", "East Madison Pet Clinic"}
+
+    polygon = [{"latitude": 43.00, "longitude": -89.55}, {"latitude": 43.20, "longitude": -89.55},
+               {"latitude": 43.20, "longitude": -89.20}, {"latitude": 43.00, "longitude": -89.20}]
+    within = client.post("/clinics/within", json={"coordinates": polygon, "acceptingNewPatients": False})
+    assert within.status_code == 200, within.text
+    names = {c["name"] for c in within.json()}
+    assert {"University Pet Clinic", "South Madison Pet Clinic"} <= names
+    assert "Downtown Madison Pet Clinic" not in names
+    assert all(not c["acceptingNewPatients"] for c in within.json())
+
+    line = [{"latitude": 43.0650, "longitude": -89.5500}, {"latitude": 43.1100, "longitude": -89.3300},
+            {"latitude": 43.1900, "longitude": -89.2000}]
+    intersects = client.post("/clinics/intersects", json={"coordinates": line})
+    assert intersects.status_code == 200, intersects.text
+    names = {c["name"] for c in intersects.json()}
+    assert {"West Madison Pet Clinic", "East Madison Pet Clinic", "Sun Prairie Pet Clinic"} <= names
+    assert "Downtown Madison Pet Clinic" not in names
+
+
+def test_clinic_search_rejects_invalid_geometry(client):
+    for endpoint, data in (
+        ("nearby", {"longitude": -89.38, "latitude": 91, "radiusMeters": 500}),
+        ("nearby", {"longitude": -89.38, "latitude": 43.07, "radiusMeters": 0}),
+        ("within", {"coordinates": []}),
+        ("intersects", {"coordinates": [{"latitude": 43, "longitude": -89}]}),
+        ("within", {"coordinates": [{"latitude": 43.0, "longitude": -89.5}, {"latitude": 43.2, "longitude": -89.2},
+                                    {"latitude": 43.2, "longitude": -89.5}, {"latitude": 43.0, "longitude": -89.2}]}),
+    ):
+        response = client.post("/clinics/" + endpoint, json=data)
+        assert response.status_code == 400, response.text
+
+
+def test_clinic_catalog_upsert_preserves_identity_and_clinic_scope(client):
+    first_catalog = client.get("/clinics/1/services")
+    assert first_catalog.status_code == 200, first_catalog.text
+    assert "WELLNESS_CHECK" in first_catalog.text and "DENTAL_SPARKLE" in first_catalog.text
+    assert "RABIES_EXPRESS" in client.get("/clinics/2/services").text
+    assert client.get("/clinics/1/services/new").status_code == 200
+
+    data = {"serviceCode": "PORT_DEMO", "name": "Port demo offering", "description": "Initial description", "price": 45.01, "durationMinutes": 30}
+    created = client.post("/clinics/1/services", json=data)
+    assert created.status_code == 200, created.text
+    first = created.json()
+    assert first["id"] and first["clinicId"] == 1 and first["price"] == 45.01
+    updated = client.post("/clinics/1/services", json={**data, "name": "Updated <offering>", "price": "65.10", "durationMinutes": 45})
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["id"] == first["id"]
+    assert updated.json()["price"] == 65.1 and updated.json()["durationMinutes"] == 45
+    catalog = client.get("/clinics/1/services").text
+    assert catalog.count("<code>PORT_DEMO</code>") == 1
+    assert "Updated &lt;offering&gt;" in catalog
+    edit = client.get("/clinics/1/services/PORT_DEMO/edit")
+    assert edit.status_code == 200 and "65.10" in edit.text
+
+    other = client.post("/clinics/2/services", json=data)
+    assert other.status_code == 200, other.text
+    assert other.json()["id"] != first["id"] and other.json()["clinicId"] == 2
+    assert "Updated &lt;offering&gt;" not in client.get("/clinics/2/services").text
+
+
+def test_clinic_catalog_validates_fields_and_missing_entities(client):
+    data = {"serviceCode": "INVALID_DEMO", "name": "Demo", "price": 20, "durationMinutes": 30}
+    for changes in ({"price": -1}, {"price": "0.001"}, {"durationMinutes": 0}, {"serviceCode": ""}, {"name": ""}):
+        response = client.post("/clinics/1/services", json={**data, **changes})
+        assert response.status_code == 400, response.text
+        assert response.json()["errors"]
+    assert client.post("/clinics/999999/services", json=data).status_code == 404
+    assert client.get("/clinics/999999/services").status_code == 404
+    assert client.get("/clinics/1/services/DOES_NOT_EXIST/edit").status_code == 404
+
+
 def test_locale_switch_matches_reference_cookie_and_redirect(client):
     response = client.get('/locale?lang=ES&backUrl=/owners/find', allow_redirects=False)
     assert response.status_code in (301, 302, 303)
@@ -396,6 +480,67 @@ def test_reference_service_lookup_operations(client, application_context):
     assert service.find_pet_by_id(pet_id) is None
     service.delete_owner(owner_id)
     assert service.find_owner_by_id(owner_id) is None
+
+
+def test_concurrent_catalog_updates_preserve_one_complete_offering(client, application_context):
+    """Concurrent HTTP updates keep the clinic/code identity and a whole submitted row."""
+
+    import java
+
+    code = 'ASYNC-PARITY-CHECK'
+    payload = {'serviceCode': code, 'name': 'Concurrent fixture', 'description': 'Concurrent fixture',
+               'price': 10, 'durationMinutes': 10}
+    seeded = client.post('/clinics/1/services', json=payload)
+    assert seeded.status_code == 200, seeded.text
+    offering_id = seeded.json()['id']
+    http = java.type('java.net.http.HttpClient').newHttpClient()
+    JavaRequest = java.type('java.net.http.HttpRequest')
+    BodyPublishers = java.type('java.net.http.HttpRequest$BodyPublishers')
+    BodyHandlers = java.type('java.net.http.HttpResponse$BodyHandlers')
+    TimeUnit = java.type('java.util.concurrent.TimeUnit')
+    endpoint = application_context.java_ctx.getBean(java.type('io.micronaut.runtime.server.EmbeddedServer')).getURL().toString()
+    submitted = [{**payload, 'name': f'Concurrent {i}', 'description': f'Submission {i}',
+                  'price': 20 + i, 'durationMinutes': 30 + i} for i in range(6)]
+    futures = []
+    source = application_context.java_ctx.getBean(java.type('javax.sql.DataSource'))
+    source = java.type('io.micronaut.data.connection.jdbc.advice.DelegatingDataSource').unwrapDataSource(source)
+    try:
+        for body in submitted:
+            request = (JavaRequest.newBuilder(java.type('java.net.URI').create(endpoint + '/clinics/1/services'))
+                       .header('Content-Type', 'application/json')
+                       .POST(BodyPublishers.ofString(json.dumps(body))).build())
+            futures.append(http.sendAsync(request, BodyHandlers.ofString()))
+        for future in futures:
+            response = future.get(30, TimeUnit.SECONDS)
+            assert response.statusCode() == 200, response.body()
+            assert json.loads(response.body())['id'] == offering_id
+        connection = source.getConnection()
+        query = connection.prepareStatement(_database_sql(
+            'SELECT ID, NAME, DESCRIPTION, PRICE, DURATION_MINUTES FROM CLINIC_SERVICE_OFFERINGS '
+            'WHERE CLINIC_ID = 1 AND SERVICE_CODE = ?'))
+        try:
+            query.setString(1, code)
+            rows = query.executeQuery()
+            assert rows.next()
+            assert rows.getInt(1) == offering_id
+            persisted = (rows.getString(2), rows.getString(3), rows.getInt(4), rows.getInt(5))
+            assert persisted in [(v['name'], v['description'], v['price'], v['durationMinutes']) for v in submitted]
+            assert not rows.next()
+            rows.close()
+        finally:
+            query.close()
+            connection.close()
+    finally:
+        http.close()
+        connection = source.getConnection()
+        connection.setAutoCommit(True)
+        delete = connection.prepareStatement(_database_sql('DELETE FROM CLINIC_SERVICE_OFFERINGS WHERE ID = ?'))
+        try:
+            delete.setInt(1, offering_id)
+            delete.executeUpdate()
+        finally:
+            delete.close()
+            connection.close()
 
 
 def _database_sql(sql):
