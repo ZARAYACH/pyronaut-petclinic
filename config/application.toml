@@ -39,6 +39,15 @@ enabled = true
 [ucp-manager]
 enabled = false
 
+# Spatial types are removed from the slim image. Use the regular image for
+# the clinic geospatial showcase and pin its version for repeatable runs.
+[test-resources.containers.oracle]
+image-name = 'gvenzl/oracle-free'
+image-tag = '23.26.2-faststart'
+
+[[test-resources.containers.oracle.copy-to-container]]
+'config/oracle/01-priority.sql' = '/container-entrypoint-initdb.d/01-priority.sql'
+
 [logger.levels]
 petclinic = 'DEBUG'
 io.micronaut.data.query = 'ERROR'
