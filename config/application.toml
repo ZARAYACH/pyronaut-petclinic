@@ -3,6 +3,10 @@
 [micronaut.application]
 name = 'pyronaut-petclinic'
 
+[micronaut.server.locale-resolution]
+default-locale = 'en'
+cookie-name = 'locale'
+
 [micronaut.executors.blocking]
 type = 'CACHED'
 virtual = false

@@ -110,8 +110,14 @@ def welcome() -> dict:
 
 
 @Get("/locale")
-def locale(backUrl: Annotated[str, QueryValue(defaultValue="/")] = "/"):
-    return redirect_to(backUrl or "/")
+def locale(request: HttpRequest, lang: Annotated[str, QueryValue(defaultValue="en")] = "en",
+           backUrl: Annotated[str, QueryValue(defaultValue="")] = ""):
+    language = lang.lower() if lang.lower() in ("en", "es", "de") else "en"
+    target = backUrl if backUrl and backUrl.strip() else request.getHeaders().get("Referer") or "/"
+    if not target.startswith("/") or target.startswith("//") or "/locale" in target:
+        target = "/"
+    cookie = Cookie.of("locale", language).maxAge(Duration.ofDays(365)).path("/").httpOnly(True)
+    return redirect_to(target).cookie(cookie)
 
 
 @Get("/owners/find")
