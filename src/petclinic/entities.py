@@ -15,32 +15,33 @@ Key concepts demonstrated here:
 * ``@Serdeable`` lets entities be serialized for JSON responses.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated
 
-from java.time import LocalDate
-from micronaut.core.annotation import Introspected
-from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation
+from java.time import Duration, LocalDate, Period
+from jakarta.validation.constraints import Digits, NotBlank, NotNull
+from micronaut.core.annotation import Creator, Introspected
+from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation, Transient
 from micronaut.serde.annotation import Serdeable
 
 
 @Serdeable
-@MappedEntity("PET_TYPES")
+@MappedEntity("TYPES")
 @dataclass
 class PetType:
     """Lookup table entity for values such as cat, dog, and lizard."""
 
-    name: str
+    name: Annotated[str, NotBlank, MappedProperty("NAME")]
     id: Annotated[int | None, Id, GeneratedValue] = None
 
 
 @Serdeable
-@MappedEntity("SPECIALITIES")
+@MappedEntity("SPECIALTIES")
 @dataclass
 class Speciality:
     """Lookup table entity for veterinarian specialities."""
 
-    name: str
+    name: Annotated[str, NotBlank, MappedProperty("NAME")]
     id: Annotated[int | None, Id, GeneratedValue] = None
 
 
@@ -54,12 +55,13 @@ class Owner:
     to ``None`` so new instances clearly represent unsaved rows.
     """
 
-    firstName: str
-    lastName: str
-    address: str
-    city: str
-    telephone: str
+    firstName: Annotated[str, NotBlank, MappedProperty("FIRST_NAME")]
+    lastName: Annotated[str, NotBlank, MappedProperty("LAST_NAME")]
+    address: Annotated[str, NotBlank, MappedProperty("ADDRESS")]
+    city: Annotated[str, NotBlank, MappedProperty("CITY")]
+    telephone: Annotated[str | None, Digits(integer=10, fraction=0), MappedProperty("TELEPHONE")]
     id: Annotated[int | None, Id, GeneratedValue] = None
+    pets: Annotated[list["Pet"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="owner")] = field(default_factory=list)
 
     def is_new(self) -> bool:
         return self.id is None
@@ -76,11 +78,12 @@ class Pet:
     fetch these non-null relationships when the UI needs them.
     """
 
-    name: str
-    birthDate: LocalDate
-    type: Annotated[PetType, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("TYPE_ID")]
-    owner: Annotated[Owner, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("OWNER_ID")]
+    name: Annotated[str, NotBlank, MappedProperty("NAME")]
+    birthDate: Annotated[LocalDate, NotNull, MappedProperty("BIRTH_DATE")]
+    type: Annotated[PetType | None, NotNull, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("TYPE_ID")]
+    owner: Annotated[Owner | None, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("OWNER_ID")]
     id: Annotated[int | None, Id, GeneratedValue] = None
+    visits: Annotated[list["Visit"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="pet")] = field(default_factory=list)
 
     def is_new(self) -> bool:
         return self.id is None
@@ -98,10 +101,12 @@ class Pet:
 class Visit:
     """A veterinary visit for a pet."""
 
-    date: Annotated[LocalDate, MappedProperty("VISIT_DATE")]
-    description: str
-    pet: Annotated[Pet, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("PET_ID")]
+    date: Annotated[LocalDate, NotNull, MappedProperty("VISIT_DATE")]
+    description: Annotated[str, NotBlank, MappedProperty("DESCRIPTION")]
+    pet: Annotated[Pet | None, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("PET_ID")]
     id: Annotated[int | None, Id, GeneratedValue] = None
+    duration: Annotated[Duration, MappedProperty("DURATION")] = field(default_factory=lambda: Duration.ofMinutes(30))
+    period: Annotated[Period, MappedProperty("FOLLOW_UP_PERIOD")] = field(default_factory=lambda: Period.ofMonths(6))
 
     def is_new(self) -> bool:
         return self.id is None
@@ -113,9 +118,17 @@ class Visit:
 class Vet:
     """A veterinarian. Specialities are joined through ``VetSpeciality``."""
 
-    firstName: str
-    lastName: str
+    firstName: Annotated[str, NotBlank, MappedProperty("FIRST_NAME")]
+    lastName: Annotated[str, NotBlank, MappedProperty("LAST_NAME")]
     id: Annotated[int | None, Id, GeneratedValue] = None
+    specialities: Annotated[list[Speciality], Transient] = field(default_factory=list)
+
+    @staticmethod
+    @Creator
+    def from_columns(firstName: str, lastName: str, id: int | None) -> "Vet":
+        """The persistence constructor excludes transient specialities, as in Java."""
+
+        return Vet(firstName=firstName, lastName=lastName, id=id)
 
 
 @Serdeable
@@ -130,12 +143,10 @@ class VetWithSpecialities:
     specialityRows: str | None
 
 
-@Serdeable
-@MappedEntity("VET_SPECIALITIES")
+@MappedEntity("VET_SPECIALTIES")
 @dataclass
 class VetSpeciality:
-    """Join-table row linking a veterinarian to a speciality."""
+    """The reference's pure join row, represented by its two foreign keys."""
 
-    vet: Annotated[Vet, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("VET_ID")]
-    speciality: Annotated[Speciality, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("SPECIALITY_ID")]
-    id: Annotated[int | None, Id, GeneratedValue] = None
+    vetId: Annotated[int, MappedProperty("VET_ID")]
+    specialityId: Annotated[int, MappedProperty("SPECIALTY_ID")]
