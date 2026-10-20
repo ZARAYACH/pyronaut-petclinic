@@ -32,19 +32,28 @@ additional-resources = ['views', 'static']
 [tool.pyronaut.test-resources]
 enabled = true
 client-timeout = 180
+additional-modules = ['jdbc-oracle-free', 'jdbc-postgresql', 'jdbc-mysql']
 
 [tool.pyronaut.dependencies]
+boms = ['io.micronaut.data:micronaut-data-bom:5.2.3']
 runtime = [
   'io.micronaut:micronaut-http-server-netty',
-  'io.micronaut.cache:micronaut-cache-core',
+  'io.micronaut.cache:micronaut-cache-caffeine',
   'io.micronaut.data:micronaut-data-jdbc',
   'io.micronaut.flyway:micronaut-flyway:8.1.1',
   'io.micronaut.serde:micronaut-serde-jackson',
-  'io.micronaut.sql:micronaut-jdbc-ucp',
+  'io.micronaut.serde:micronaut-serde-oracle-jdbc-json',
+  'io.micronaut.sql:micronaut-jdbc-hikari',
   'io.micronaut.validation:micronaut-validation',
   'io.micronaut.views:micronaut-views-jinjava',
-  'com.oracle.database.jdbc:ojdbc11',
+  'com.oracle.database.jdbc:ojdbc17',
+  'com.h2database:h2',
+  'org.orbisgis:h2gis:2.2.5',
+  'org.postgresql:postgresql',
+  'com.mysql:mysql-connector-j',
   'org.flywaydb:flyway-database-oracle',
+  'org.flywaydb:flyway-database-postgresql',
+  'org.flywaydb:flyway-mysql',
   'io.micronaut.pyronaut:micronaut-pyronaut-logback'
 ]
 development-runtime = [
