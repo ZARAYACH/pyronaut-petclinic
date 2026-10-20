@@ -21,14 +21,17 @@ from typing import Annotated
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from java.net import URI
-from java.time import LocalDate
-from micronaut.http import HttpResponse, MediaType
+from java.time import Duration, LocalDate, Period
+from micronaut.http import HttpRequest, HttpResponse, MediaType
+from micronaut.http.cookie import Cookie
+from micronaut.http.server.exceptions import NotFoundException
 from micronaut.http.annotation import Body, Get, Post, Produces, QueryValue
 from micronaut.views import View
 
 from .forms import OwnerForm, PetForm, VisitForm
 from .mapper import FormMapper
-from .services import ClinicService
+from .services import ClinicService, owner_search_model, owner_view_model, pet_view_model, vet_view_models
+from .validation import violation_field
 
 clinic_service: Annotated[ClinicService, Inject]
 """Injected application service facade."""
@@ -51,9 +54,7 @@ def validation_errors(form) -> dict[str, str]:
 
     errors = {}
     for violation in validator.validate(form):
-        field = str(violation.getPropertyPath())
-        if "." in field:
-            field = field.rsplit(".", 1)[-1]
+        field = violation_field(violation)
         if field:
             errors[field] = str(violation.getMessage())
     for field, label in (("birthDate", "Birth date"), ("date", "Visit date")):
@@ -76,7 +77,11 @@ def pet_type_for(form: PetForm, errors: dict[str, str]):
 
 def parse_form_date(value: str | None) -> LocalDate:
     assert value is not None
-    return LocalDate.parse(value)
+    return LocalDate.parse(date.fromisoformat(value).isoformat())
+
+
+
+
 
 
 @Get("/")
@@ -103,7 +108,6 @@ def init_find_form(notFound: Annotated[bool, QueryValue(defaultValue="false")] =
 
 
 @Get("/owners")
-@View("owners/ownersList")
 def process_find_form(lastName: Annotated[str, QueryValue(defaultValue="")] = ""):
     """Search owners and follow the PetClinic redirect behavior."""
 
@@ -112,14 +116,14 @@ def process_find_form(lastName: Annotated[str, QueryValue(defaultValue="")] = ""
         return redirect_to("/owners/find?notFound=true")
     if len(owners) == 1:
         return redirect_to(f"/owners/{owners[0].id}")
-    return {"owners": owners, "lastName": lastName}
+    return HttpResponse.ok({"owners": [owner_search_model(owner) for owner in owners], "lastName": lastName})
 
 
 @Get("/owners/list")
 @View("owners/ownersList")
 def show_owner_list(lastName: Annotated[str, QueryValue(defaultValue="")] = "") -> dict:
     owners = clinic_service.find_all_owners() if not lastName else clinic_service.find_owner_by_last_name(lastName)
-    return {"owners": owners, "lastName": lastName}
+    return {"owners": [owner_view_model(owner) for owner in owners], "lastName": lastName}
 
 
 @Get("/owners/new")
@@ -145,7 +149,7 @@ def process_owner_creation_form(form: Annotated[OwnerForm, Body]):
 def init_owner_update_form(ownerId: int) -> dict:
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None:
-        return {"error": "Owner not found", "isNew": False, "validationErrors": {}}
+        raise NotFoundException()
     return {"owner": form_mapper.to_owner_form(owner), "ownerId": ownerId, "isNew": False, "validationErrors": {}}
 
 
@@ -157,6 +161,7 @@ def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
         return HttpResponse.notFound()
     errors = validation_errors(form)
     if errors:
+        form.id = ownerId
         return {"owner": form, "ownerId": ownerId, "isNew": False, "validationErrors": errors}
     clinic_service.save_owner(form_mapper.update_owner(existing, form))
     return redirect_to(f"/owners/{ownerId}")
@@ -167,8 +172,8 @@ def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
 def show_owner(ownerId: int) -> dict:
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None:
-        return {"error": "Owner not found"}
-    return {"owner": owner, "pets": clinic_service.owner_detail_model(owner)}
+        raise NotFoundException()
+    return {"owner": owner_view_model(owner)}
 
 
 @Get("/owners/{ownerId}/pets/new")
@@ -176,7 +181,7 @@ def show_owner(ownerId: int) -> dict:
 def init_pet_creation_form(ownerId: int) -> dict:
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None or owner.id != ownerId:
-        return {"error": "Owner not found"}
+        raise NotFoundException()
     return {"pet": PetForm(), "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": {}}
 
 
@@ -194,10 +199,10 @@ def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
         return HttpResponse.notFound()
     errors = validation_errors(form)
     pet_type = pet_type_for(form, errors)
-    if form.typeId and pet_type is None:
-        errors["typeId"] = "Invalid pet type"
     if errors:
         return {"pet": form, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": errors}
+    if pet_type is None:
+        return HttpResponse.badRequest("Invalid pet type")
     form.birthDateValue = parse_form_date(form.birthDate)
     pet = form_mapper.to_pet(form, owner, pet_type)
     clinic_service.save_pet(pet)
@@ -209,7 +214,7 @@ def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
 def init_pet_update_form(ownerId: int, petId: int) -> dict:
     pet = clinic_service.find_pet_by_id(petId)
     if pet is None:
-        return {"error": "Pet not found"}
+        raise NotFoundException()
     owner = pet.owner or clinic_service.find_owner_by_id(ownerId)
     return {"pet": form_mapper.to_pet_form(pet), "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": {}}
 
@@ -223,10 +228,11 @@ def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, B
         return HttpResponse.notFound()
     errors = validation_errors(form)
     pet_type = pet_type_for(form, errors)
-    if form.typeId and pet_type is None:
-        errors["typeId"] = "Invalid pet type"
     if errors:
+        form.id = petId
         return {"pet": form, "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": errors}
+    if pet_type is None:
+        return HttpResponse.badRequest("Invalid pet type")
     form.birthDateValue = parse_form_date(form.birthDate)
     updated = form_mapper.update_pet(pet, form, owner, pet_type)
     clinic_service.save_pet(updated)
@@ -260,7 +266,7 @@ def process_visit_creation_form(ownerId: int, petId: int, form: Annotated[VisitF
 @Get("/vets")
 @View("vets/vetList")
 def show_vet_list() -> dict:
-    return {"vets": clinic_service.vet_models()}
+    return {"vets": vet_view_models(clinic_service.find_all_vets())}
 
 
 @Get("/vets/html")
@@ -277,4 +283,5 @@ def show_vet_list_json() -> list:
     ``@Produces`` selects the JSON media type instead of view rendering.
     """
 
-    return clinic_service.vet_models()
+    return [{"id": vet.id, "firstName": vet.firstName, "lastName": vet.lastName}
+            for vet in clinic_service.find_all_vets()]

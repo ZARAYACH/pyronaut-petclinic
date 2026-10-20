@@ -10,11 +10,23 @@ used by the application.
 """
 
 import re
+import json
+import os
 
 import pytest
 
 from pyronaut import requests
 from pyronaut.test import MicronautTest, micronaut_test_fixture
+
+DATABASE = os.environ.get('PETCLINIC_TEST_DATABASE', 'oracle')
+
+
+@pytest.fixture(autouse=True)
+def oracle_feature_scope(request):
+    oracle_cases = ('test_visit_interval_', 'test_visit_search_', 'test_knowledge_',
+                    'test_owner_care_', 'test_priority_')
+    if DATABASE != 'oracle' and request.node.name.startswith(oracle_cases):
+        pytest.skip('This feature is enabled only in the reference Oracle environment')
 
 
 
@@ -22,17 +34,15 @@ from pyronaut.test import MicronautTest, micronaut_test_fixture
 def application_context(request):
     """Start the Micronaut application once for the whole test module.
 
-    The fixture is module scoped because the Oracle UCP pool registers its
-    name with the JVM-wide pool manager; creating a new application context per
-    test function fails with ``UCP-45350: Universal Connection Pool already
-    exists``. ``transactional=False`` keeps each HTTP request behavior close to
-    a real running server instead of wrapping the entire test in one
-    transaction.
+    Keep one application and fixture database for the HTTP workflow suite.
+    ``transactional=False`` gives requests their real service transactions.
+    Each database profile is run in a separate CLI invocation.
     """
 
     fixture = micronaut_test_fixture(
         request,
-        MicronautTest(environments=["test"], transactional=False)
+        MicronautTest(environments=["test"] + ([] if DATABASE == 'h2' else [DATABASE]), transactional=False,
+                      properties={"petclinic.transaction-priority.reservation-seconds": 5})
     )
     yield fixture
     fixture.stop()
@@ -59,13 +69,15 @@ def test_seed_data_and_main_pages(client):
     assert ".navbar" in css.text
     vets = client.get("/vets/json").json()
     assert len(vets) == 6
-    assert any(vet["lastName"] == "Douglas" and len(vet["specialities"]) == 2 for vet in vets)
+    assert any(vet["lastName"] == "Douglas" for vet in vets)
+    vet_page = client.get("/vets").text
+    assert "dentistry" in vet_page and "surgery" in vet_page
     owners = client.get("/owners/list").text
     assert "George Franklin" in owners
     assert "Betty Davis" in owners
 
 
-def test_owner_search_flows(client):
+def test_owner_search_flows(client, application_context):
     no_match = client.get("/owners?lastName=DoesNotExist", allow_redirects=False)
     assert no_match.status_code in (301, 302, 303)
     assert no_match.headers["location"].endswith("/owners/find?notFound=true")
@@ -76,8 +88,12 @@ def test_owner_search_flows(client):
 
     multiple = client.get("/owners?lastName=Davis")
     assert multiple.status_code == 200
-    assert "Betty Davis" in multiple.text
-    assert "Harold Davis" in multiple.text
+    assert 'application/json' in multiple.headers['content-type']
+    actual = multiple.json()
+    expected = _reference_http(application_context)['ownersDavis']
+    assert actual['lastName'] == expected['lastName']
+    # The source orders only by lastName; tied Davis rows need not match H2 order on Oracle.
+    assert sorted(actual['owners'], key=lambda owner: owner['id']) == sorted(expected['owners'], key=lambda owner: owner['id'])
 
 
 def test_owner_pet_visit_form_flow(client):
@@ -170,7 +186,7 @@ def test_owner_pet_visit_form_flow(client):
     assert "wellness check" in client.get(owner_url).text
 
 
-def test_vets_html_and_json(client):
+def test_vets_html_and_json(client, application_context):
     html = client.get("/vets")
     assert html.status_code == 200
     assert "Veterinarians" in html.text
@@ -182,13 +198,26 @@ def test_vets_html_and_json(client):
 
     json_response = client.get("/vets/json")
     assert json_response.status_code == 200
-    assert any(vet["firstName"] == "Helen" for vet in json_response.json())
+    assert json_response.json() == _reference_http(application_context)['vets']
+
+
+def _reference_http(application_context):
+    import java
+    environment = application_context.java_ctx.getEnvironment()
+    resource = environment.getResourceAsStream('fixtures/reference-http.json')
+    assert resource.isPresent()
+    stream = resource.get()
+    try:
+        return json.loads(bytes((b & 255) for b in stream.readAllBytes()).decode('utf-8'))
+    finally:
+        stream.close()
 
 
 def test_missing_owner_and_pet_paths(client):
-    assert "Owner not found" in client.get("/owners/999999").text
-    assert "Owner not found" in client.get("/owners/999999/pets/new").text
-    assert "Pet not found" in client.get("/owners/1/pets/999999/visits/new").text
+    for path in ('/owners/999999', '/owners/999999/pets/new', '/owners/1/pets/999999/visits/new', '/does-not-exist'):
+        response = client.get(path)
+        assert response.status_code == 404, response.text
+        assert '404' in response.text
 
 
 def test_jinjava_templates_render_inheritance_and_conditionals(client):
