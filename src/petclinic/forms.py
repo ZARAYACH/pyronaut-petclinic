@@ -13,8 +13,8 @@ to evaluate these constraints before mapping forms to persistent entities.
 from dataclasses import dataclass
 from typing import Annotated
 
-from java.time import LocalDate
-from jakarta.validation.constraints import NotBlank, Pattern, Size
+from java.time import Duration, LocalDate, Period
+from jakarta.validation.constraints import Min, NotBlank, Pattern, Size
 from micronaut.serde.annotation import Serdeable
 
 
@@ -58,3 +58,18 @@ class VisitForm:
     date: Annotated[str | None, NotBlank(message="Visit date is required")] = None
     description: Annotated[str | None, NotBlank(message="Description is required"), Size(min=1, max=255, message="Description must be between 1 and 255 characters")] = None
     dateValue: LocalDate | None = None
+    durationMinutes: Annotated[str | None, NotBlank(message="Duration is required"), Pattern(regexp="[0-9]+", message="Duration must be a whole number of minutes")] = "30"
+    followUpPeriodMonths: Annotated[str | None, NotBlank(message="Follow-up period is required"), Pattern(regexp="[0-9]+", message="Follow-up period must be a whole number of months")] = "6"
+    durationValue: Duration | None = None
+    periodValue: Period | None = None
+
+
+@Serdeable
+@dataclass
+class VisitRequest:
+    """JSON counterpart of the HTML visit form, using numeric interval values."""
+
+    date: Annotated[str, NotBlank(message="Visit date is required")]
+    description: Annotated[str, NotBlank(message="Description is required"), Size(max=255)]
+    durationMinutes: Annotated[int, Min(value=1, message="Duration must be at least 1 minute")] = 30
+    followUpPeriodMonths: Annotated[int, Min(value=1, message="Follow-up period must be at least 1 month")] = 6

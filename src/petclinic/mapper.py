@@ -68,6 +68,8 @@ class FormMapper(ABC):
 
     @Mapper.Mapping(from_="#{null}", to="id")
     @Mapper.Mapping(from_="#{form.dateValue}", to="date")
+    @Mapper.Mapping(from_="#{form.durationValue}", to="duration")
+    @Mapper.Mapping(from_="#{form.periodValue}", to="period")
     @Mapper.Mapping(from_="#{pet}", to="pet")
     @abstractmethod
     def to_visit(self, form: VisitForm, pet: Pet) -> Visit:

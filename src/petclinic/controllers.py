@@ -28,7 +28,7 @@ from micronaut.http.server.exceptions import NotFoundException
 from micronaut.http.annotation import Body, Get, Post, Produces, QueryValue
 from micronaut.views import View
 
-from .forms import OwnerForm, PetForm, VisitForm
+from .forms import OwnerForm, PetForm, VisitForm, VisitRequest
 from .mapper import FormMapper
 from .services import ClinicService, owner_search_model, owner_view_model, pet_view_model, vet_view_models
 from .validation import violation_field
@@ -80,8 +80,21 @@ def parse_form_date(value: str | None) -> LocalDate:
     return LocalDate.parse(date.fromisoformat(value).isoformat())
 
 
+def visit_errors(form: VisitForm) -> dict[str, str]:
+    errors = validation_errors(form)
+    for field, label in (("durationMinutes", "Duration"), ("followUpPeriodMonths", "Follow-up period")):
+        if field not in errors:
+            value = int(getattr(form, field))
+            if value < 1 or value > 2147483647:
+                errors[field] = f"{label} must be between 1 and 2147483647"
+    return errors
 
 
+def persist_visit(form: VisitForm, pet):
+    form.dateValue = parse_form_date(form.date)
+    form.durationValue = Duration.ofMinutes(int(form.durationMinutes))
+    form.periodValue = Period.ofMonths(int(form.followUpPeriodMonths)).normalized()
+    clinic_service.save_visit(form_mapper.to_visit(form, pet))
 
 
 @Get("/")
@@ -244,22 +257,21 @@ def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, B
 def init_visit_creation_form(ownerId: int, petId: int) -> dict:
     pet = clinic_service.find_pet_by_id(petId)
     if pet is None:
-        return {"error": "Pet not found"}
-    return {"visit": VisitForm(), "pet": pet, "owner": pet.owner, "validationErrors": {}}
+        raise NotFoundException()
+    return {"visit": VisitForm(), "pet": pet_view_model(pet), "owner": pet.owner, "validationErrors": {}}
 
 
-@Post(value="/owners/{ownerId}/pets/{petId}/visits/new", consumes=MediaType.APPLICATION_FORM_URLENCODED)
-@View("pets/createOrUpdateVisitForm")
-def process_visit_creation_form(ownerId: int, petId: int, form: Annotated[VisitForm, Body]):
+@Post(value="/owners/{ownerId}/pets/{petId}/visits/new", consumes=MediaType.APPLICATION_JSON)
+def process_visit_creation_json(ownerId: int, petId: int, request: Annotated[VisitRequest, Body]):
     pet = clinic_service.find_pet_by_id(petId)
     if pet is None:
         return HttpResponse.notFound()
-    errors = validation_errors(form)
+    form = VisitForm(date=request.date, description=request.description,
+                     durationMinutes=str(request.durationMinutes), followUpPeriodMonths=str(request.followUpPeriodMonths))
+    errors = visit_errors(form)
     if errors:
-        return {"visit": form, "pet": pet, "owner": pet.owner, "validationErrors": errors}
-    form.dateValue = parse_form_date(form.date)
-    visit = form_mapper.to_visit(form, pet)
-    clinic_service.save_visit(visit)
+        return HttpResponse.badRequest({"message": "Validation failed", "errors": errors})
+    persist_visit(form, pet)
     return redirect_to(f"/owners/{ownerId}")
 
 

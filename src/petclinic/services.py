@@ -94,6 +94,19 @@ class ClinicService:
     def find_visit_by_id(self, visit_id: int) -> Visit | None:
         return self.visit_repository.findOneById(visit_id)
 
+    def search_visits(self, from_date: LocalDate, to_date: LocalDate, max_duration_minutes: int, max_follow_up_months: int) -> list[dict]:
+        visits = self.visit_repository.findByDateBetweenAndDurationLessThanEqualsAndPeriodLessThanEquals(
+            from_date, to_date, Duration.ofMinutes(max_duration_minutes), Period.ofMonths(max_follow_up_months).normalized()
+        )
+        return [{
+            "id": visit.id,
+            "date": str(visit.date),
+            "description": visit.description,
+            "petName": visit.pet.name if visit.pet is not None else None,
+            "ownerName": f"{visit.pet.owner.firstName} {visit.pet.owner.lastName}" if visit.pet is not None and visit.pet.owner is not None else None,
+            "durationInMinutes": duration_minutes(visit.duration),
+            "periodInMonths": visit.period.toTotalMonths(),
+        } for visit in visits]
 
     @Transactional
     def save_visit(self, visit: Visit) -> Visit:
