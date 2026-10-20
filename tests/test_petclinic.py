@@ -297,3 +297,88 @@ def test_visit_search_matches_reference_criteria_behavior(client):
         response = client.get("/visits/search?" + query)
         assert response.status_code == 200, response.text
         assert response.json() == []
+
+
+def test_vet_cache_reuses_values_until_invalidation(client, application_context):
+    """Observe a cache hit through HTTP after the underlying database changes."""
+
+    import java
+
+    cache = application_context.java_ctx.getBean(java.type('io.micronaut.cache.CacheManager')).getCache('vets')
+    source = application_context.java_ctx.getBean(java.type('javax.sql.DataSource'))
+    source = java.type('io.micronaut.data.connection.jdbc.advice.DelegatingDataSource').unwrapDataSource(source)
+    connection = source.getConnection()
+    connection.setAutoCommit(True)
+    update = connection.prepareStatement(_database_sql('UPDATE VETS SET LAST_NAME = ? WHERE ID = 1'))
+    original = None
+    try:
+        cache.invalidateAll()
+        warm = client.get('/vets/json').json()
+        original = next(vet['lastName'] for vet in warm if vet['id'] == 1)
+        update.setString(1, 'CacheProbe')
+        assert update.executeUpdate() == 1
+        assert client.get('/vets/json').json() == warm
+        assert 'James ' + original in client.get('/vets').text
+        service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
+        assert next(v.lastName for v in service.find_all_vets() if v.id == 1) == original
+        cache.invalidateAll()
+        refreshed = client.get('/vets/json').json()
+        assert next(vet['lastName'] for vet in refreshed if vet['id'] == 1) == 'CacheProbe'
+        assert 'James CacheProbe' in client.get('/vets').text
+    finally:
+        if original is not None:
+            update.setString(1, original)
+            update.executeUpdate()
+        update.close()
+        connection.close()
+        cache.invalidateAll()
+
+
+def test_reference_service_lookup_operations(client, application_context):
+    import java
+
+    service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
+    assert len(service.find_all_pets()) >= 13
+    assert service.find_visit_by_id(1).id == 1
+    assert service.find_vet_by_id(1).lastName == 'Carter'
+    assert service.find_speciality_by_id(1).id == 1
+    assert service.find_visit_by_id(999999) is None
+    assert service.find_vet_by_id(999999) is None
+    assert service.find_speciality_by_id(999999) is None
+    vets = service.find_all_vets()
+    douglas = next(vet for vet in vets if vet.lastName == 'Douglas')
+    assert sorted(s.name for s in douglas.specialities) == ['dentistry', 'surgery']
+    joins = application_context.java_ctx.getBean(java.type('petclinic.VetSpecialityRepository'))
+    assert sorted(s.name for s in joins.findSpecialitiesByVetId(douglas.id)) == ['dentistry', 'surgery']
+
+    owner = client.post('/owners/new', data={'firstName': 'Service', 'lastName': 'Facade',
+                        'address': '1 Reference Road', 'city': 'Madison', 'telephone': '6085550000'},
+                        allow_redirects=False)
+    assert owner.status_code in (301, 302, 303), owner.text
+    owner_url = owner.headers['location']
+    owner_id = int(owner_url.rsplit('/', 1)[-1])
+    pet = client.post(owner_url + '/pets/new', data={'name': 'FacadePet', 'birthDate': '2020-01-01', 'typeId': '2'},
+                      allow_redirects=False)
+    assert pet.status_code in (301, 302, 303), pet.text
+    pet_id = int(re.search(r'/pets/(\d+)/edit', client.get(owner_url).text).group(1))
+    visit = client.post(f'{owner_url}/pets/{pet_id}/visits/new', json={'date': '2029-11-20',
+                        'description': 'Facade delete check', 'durationMinutes': 30, 'followUpPeriodMonths': 6},
+                        allow_redirects=False)
+    assert visit.status_code in (301, 302, 303), visit.text
+    visits = service.find_visits_by_pet_id(pet_id)
+    visit_id = next(v.id for v in visits if v.description == 'Facade delete check')
+    assert service.find_visit_by_id(visit_id).description == 'Facade delete check'
+    service.delete_visit(visit_id)
+    assert service.find_visit_by_id(visit_id) is None
+    service.delete_pet(pet_id)
+    assert service.find_pet_by_id(pet_id) is None
+    service.delete_owner(owner_id)
+    assert service.find_owner_by_id(owner_id) is None
+
+
+def _database_sql(sql):
+    if DATABASE != 'postgres':
+        return sql
+    names = {'VETS', 'LAST_NAME', 'CLINIC_SERVICE_OFFERINGS', 'NAME', 'DESCRIPTION',
+             'PRICE', 'DURATION_MINUTES', 'CLINIC_ID', 'SERVICE_CODE'}
+    return re.sub(r'\b[A-Z_]+\b', lambda match: '"' + match[0] + '"' if match[0] in names else match[0], sql)

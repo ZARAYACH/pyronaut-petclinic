@@ -116,6 +116,7 @@ class ClinicService:
             return self.visit_repository.save(visit)
         return self.visit_repository.update(visit)
 
+    @Cacheable("vets")
     def find_all_vets(self) -> list[Vet]:
         return [Vet(id=vet.id, firstName=vet.firstName, lastName=vet.lastName,
                     specialities=[Speciality(id=s['id'], name=s['name']) for s in _parse_speciality_rows(vet.specialityRows)])
