@@ -23,12 +23,17 @@ from .forms import OwnerForm, PetForm, VisitForm
 class FormMapper(ABC):
     """Maps between browser-facing form DTOs and persistent entities."""
 
-    @Mapper
+    @Mapper.Mapping(from_="#{null}", to="id")
     @abstractmethod
     def to_owner(self, form: OwnerForm) -> Owner:
         ...
 
-    @Mapper
+    @Mapper.Mapping(from_="owner.id", to="id")
+    @Mapper.Mapping(from_="form.firstName", to="firstName")
+    @Mapper.Mapping(from_="form.lastName", to="lastName")
+    @Mapper.Mapping(from_="form.address", to="address")
+    @Mapper.Mapping(from_="form.city", to="city")
+    @Mapper.Mapping(from_="form.telephone", to="telephone")
     @abstractmethod
     def update_owner(self, owner: Owner, form: OwnerForm) -> Owner:
         ...

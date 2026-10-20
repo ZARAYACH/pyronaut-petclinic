@@ -5,18 +5,21 @@ contains workflow-oriented operations used by the controllers. Keeping these
 operations in a service demonstrates normal Micronaut dependency injection in
 Python and keeps route handlers small.
 
-The bean is ``@Prototype`` to show explicit bean scoping. Micronaut injects the
-repository fields into each service instance based on the ``Annotated[..., Inject]``
+The bean is ``@Singleton``, matching the reference service. Micronaut injects the
+repository fields based on the ``Annotated[..., Inject]``
 declarations.
 """
 
+from datetime import timedelta
 from typing import Annotated
 
-from jakarta.inject import Inject
-from jakarta.transaction import Transactional
-from micronaut.context.annotation import Prototype
+from java.time import Duration, LocalDate, Period
 
-from .entities import Owner, Pet, PetType, Speciality, VetWithSpecialities, Visit
+from jakarta.inject import Inject, Singleton
+from jakarta.transaction import Transactional
+from micronaut.cache.annotation import Cacheable
+
+from .entities import Owner, Pet, PetType, Speciality, Vet, Visit
 from .repositories import (
     OwnerRepository,
     PetRepository,
@@ -27,7 +30,7 @@ from .repositories import (
 )
 
 
-@Prototype
+@Singleton
 class ClinicService:
     """Facade over repositories for PetClinic workflows."""
 
@@ -44,10 +47,10 @@ class ClinicService:
         return self.owner_repository.findOneById(owner_id)
 
     def find_owner_by_last_name(self, last_name: str) -> list[Owner]:
-        return list(self.owner_repository.findByLastName(last_name))
+        return list(self.owner_repository.findByLastNameContainingIgnoreCaseOrderByLastName(last_name))
 
     def find_all_owners(self) -> list[Owner]:
-        return list(self.owner_repository.findAllOrdered())
+        return list(self.owner_repository.findAllOrderByLastName())
 
     @Transactional
     def save_owner(self, owner: Owner) -> Owner:
@@ -59,6 +62,13 @@ class ClinicService:
 
     def find_pet_by_id(self, pet_id: int) -> Pet | None:
         return self.pet_repository.findOneById(pet_id)
+
+    @Transactional
+    def delete_owner(self, owner_id: int) -> None:
+        self.owner_repository.deleteById(owner_id)
+
+    def find_all_pets(self) -> list[Pet]:
+        return list(self.pet_repository.findAll())
 
     def find_pet_types(self) -> list[PetType]:
         return list(self.pet_type_repository.findAllOrderByName())
@@ -75,7 +85,15 @@ class ClinicService:
         return self.pet_repository.update(pet)
 
     def find_visits_by_pet_id(self, pet_id: int) -> list[Visit]:
-        return list(self.visit_repository.findByPetIdOrderByDateDesc(pet_id))
+        return list(self.visit_repository.findByPetId(pet_id))
+
+    @Transactional
+    def delete_pet(self, pet_id: int) -> None:
+        self.pet_repository.deleteById(pet_id)
+
+    def find_visit_by_id(self, visit_id: int) -> Visit | None:
+        return self.visit_repository.findOneById(visit_id)
+
 
     @Transactional
     def save_visit(self, visit: Visit) -> Visit:
@@ -85,53 +103,31 @@ class ClinicService:
             return self.visit_repository.save(visit)
         return self.visit_repository.update(visit)
 
-    def find_all_vets(self) -> list[VetWithSpecialities]:
-        return list(self.vet_repository.findAllWithSpecialities())
+    def find_all_vets(self) -> list[Vet]:
+        return [Vet(id=vet.id, firstName=vet.firstName, lastName=vet.lastName,
+                    specialities=[Speciality(id=s['id'], name=s['name']) for s in _parse_speciality_rows(vet.specialityRows)])
+                for vet in self.vet_repository.findAllWithSpecialities()]
 
-    def owner_detail_model(self, owner: Owner) -> list[dict]:
-        """Build the view model used by the owner details template.
+    @Transactional
+    def delete_visit(self, visit_id: int) -> None:
+        self.visit_repository.deleteById(visit_id)
 
-        The service shapes nested owner, pet, and visit data into dictionaries
-        that are easy for the Jinjava templates to consume.
-        """
-
-        if owner.id is None:
-            return []
-        pets = []
-        loaded_pets = list(self.pet_repository.findByOwnerIdOrderByName(owner.id))
-        for pet in loaded_pets:
-            visits = [
-                {"id": visit.id, "date": str(visit.date or ""), "description": visit.description}
-                for visit in self.visit_repository.findByPetIdOrderByDateDesc(pet.id)
-            ]
-            pets.append({
-                "id": pet.id,
-                "name": pet.name,
-                "birthDate": str(pet.birthDate or ""),
-                "type": pet.type.name if pet.type is not None else "",
-                "visits": sorted(visits, key=lambda visit: str(visit["date"] or "")),
-            })
-        return sorted(pets, key=lambda pet: pet["name"].lower())
-
-    def vet_models(self) -> list[dict]:
-        """Build both HTML and JSON representations for veterinarian lists."""
-
-        vets = list(self.vet_repository.findAllWithSpecialities())
-        models = []
-        for vet in vets:
-            specialities = _parse_speciality_rows(vet.specialityRows)
-            speciality_names = [speciality["name"] for speciality in specialities]
-            models.append({
-                "id": vet.id,
-                "firstName": vet.firstName,
-                "lastName": vet.lastName,
-                "specialities": specialities,
-                "specialitiesAsString": ", ".join(speciality_names) if speciality_names else "none",
-            })
-        return models
+    def find_vet_by_id(self, vet_id: int) -> Vet | None:
+        return self.vet_repository.findOneById(vet_id)
 
     def find_all_specialities(self) -> list[Speciality]:
         return list(self.speciality_repository.findAllOrderByName())
+
+    def find_speciality_by_id(self, speciality_id: int) -> Speciality | None:
+        return self.speciality_repository.findOneById(speciality_id)
+
+
+def duration_minutes(value) -> int:
+    """GraalPy exposes Java durations as Python timedeltas when loading entities."""
+
+    if isinstance(value, timedelta):
+        return value // timedelta(minutes=1)
+    return value.toMinutes()
 
 
 def _parse_speciality_rows(value: str | None) -> list[dict]:
@@ -148,3 +144,50 @@ def _parse_speciality_rows(value: str | None) -> list[dict]:
             continue
         specialities.append({"id": int(speciality_id), "name": name})
     return specialities
+
+
+def vet_view_models(vets: list[Vet]) -> list[dict]:
+    """Adapt the cached service entities for the translated veterinarian view."""
+
+    models = []
+    for vet in vets:
+        specialities = [{'id': s.id, 'name': s.name} for s in sorted(vet.specialities, key=lambda s: s.name)]
+        models.append({'id': vet.id, 'firstName': vet.firstName, 'lastName': vet.lastName,
+                       'specialities': specialities,
+                       'specialitiesAsString': ', '.join(s['name'] for s in specialities) if specialities else 'none'})
+    return models
+
+
+def pet_view_model(pet: Pet) -> dict:
+    pet_type = pet.type.name if pet.type is not None else ''
+    return {
+        'id': pet.id, 'name': pet.name, 'birthDate': str(pet.birthDate or ''),
+        'type': {'name': pet_type} if pet.type is not None else None,
+        'typeClass': pet_type.strip().lower() or 'dog',
+        'icon': {'cat': 'fa-cat', 'bird': 'fa-dove', 'hamster': 'fa-hippo', 'snake': 'fa-worm'}.get(pet_type.strip().lower(), 'fa-dog'),
+        'visits': [{'id': v.id, 'date': str(v.date or ''), 'description': v.description,
+                    'durationInMinutes': duration_minutes(v.duration) if v.duration is not None else None,
+                    'periodInMonths': v.period.toTotalMonths() if v.period is not None else None}
+                   for v in sorted(pet.visits, key=lambda visit: str(visit.date))],
+    }
+
+
+def owner_view_model(owner: Owner) -> dict:
+    return {'id': owner.id, 'firstName': owner.firstName, 'lastName': owner.lastName,
+            'address': owner.address, 'city': owner.city, 'telephone': owner.telephone,
+            'pets': [pet_view_model(pet) for pet in owner.pets]}
+
+
+def owner_search_model(owner: Owner) -> dict:
+    """Match the reference's non-recursive owner search JSON representation."""
+
+    result = {'id': owner.id, 'firstName': owner.firstName, 'lastName': owner.lastName,
+              'address': owner.address, 'city': owner.city, 'telephone': owner.telephone}
+    pets = []
+    for pet in owner.pets:
+        pets.append({'id': pet.id, 'name': pet.name, 'birthDate': str(pet.birthDate),
+                     'type': {'id': pet.type.id, 'name': pet.type.name},
+                     'owner': dict(result)})
+    if pets:
+        result['pets'] = pets
+    return result
