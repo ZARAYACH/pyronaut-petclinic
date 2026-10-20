@@ -27,17 +27,19 @@ expire-after-write = '60s'
 maximum-size = 100
 
 [datasources.default]
-db-type = 'oracle'
-driver-class-name = 'oracle.jdbc.OracleDriver'
-create-connection-in-borrow-thread = true
+url = 'jdbc:h2:mem:petclinic;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE'
+username = 'sa'
+password = ''
+db-type = 'h2'
+driver-class-name = 'org.h2.Driver'
 schema-generate = 'NONE'
-dialect = 'ORACLE'
+dialect = 'H2'
+maximum-pool-size = 2
+minimum-idle = 1
 
 [flyway.datasources.default]
 enabled = true
-
-[ucp-manager]
-enabled = false
+locations = ['classpath:db/h2']
 
 # Spatial types are removed from the slim image. Use the regular image for
 # the clinic geospatial showcase and pin its version for repeatable runs.
