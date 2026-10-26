@@ -17,8 +17,10 @@ from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Body, Get, Post
 from micronaut.serde.annotation import Serdeable
 from micronaut.views import View
+from micronaut.http.server.exceptions import NotFoundException
 
 from .validation import violation_field
+from .errors import entity_not_found
 
 
 @MappedEntity("CLINICS")
@@ -252,7 +254,7 @@ def intersects(request: Annotated[ClinicCoordinatesRequest, Body]):
 def clinic_services(clinicId: int):
     clinic = branch_service.clinics.findOneById(clinicId)
     if clinic is None:
-        return HttpResponse.notFound({"error": "Clinic not found"})
+        raise NotFoundException()
     return {"clinic": _clinic_model(clinic), "services": [_offering_model(o) for o in branch_service.offerings.findByClinicIdOrderByServiceCode(clinicId)]}
 
 
@@ -261,7 +263,7 @@ def clinic_services(clinicId: int):
 def new_service(clinicId: int):
     clinic = branch_service.clinics.findOneById(clinicId)
     if clinic is None:
-        return HttpResponse.notFound({"error": "Clinic not found"})
+        raise NotFoundException()
     return {"clinic": _clinic_model(clinic), "service": {"price": "0.00", "durationMinutes": 30}, "isNew": True, "validationErrors": {}}
 
 
@@ -270,7 +272,7 @@ def new_service(clinicId: int):
 def edit_service(clinicId: int, serviceCode: str):
     offering = branch_service.offerings.findByClinicIdAndServiceCode(clinicId, serviceCode)
     if offering is None:
-        return HttpResponse.notFound({"error": "Service offering not found"})
+        raise NotFoundException()
     return {"clinic": _clinic_model(offering.clinic), "service": _offering_model(offering), "isNew": False, "validationErrors": {}}
 
 
@@ -278,7 +280,7 @@ def edit_service(clinicId: int, serviceCode: str):
 def save_service(clinicId: int, form: Annotated[ClinicServiceOfferingForm, Body]):
     clinic = branch_service.clinics.findOneById(clinicId)
     if clinic is None:
-        return HttpResponse.notFound({"message": "Clinic not found"})
+        return entity_not_found()
     errors = {violation_field(v): str(v.getMessage()) for v in validator.validate(form)}
     if errors:
         return HttpResponse.badRequest({"message": "Validation failed", "errors": errors})

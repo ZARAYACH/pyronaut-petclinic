@@ -32,6 +32,7 @@ from .forms import OwnerForm, PetForm, VisitForm, VisitRequest
 from .mapper import FormMapper
 from .services import ClinicService, owner_search_model, owner_view_model, pet_view_model, vet_view_models
 from .validation import violation_field
+from .errors import entity_not_found
 
 clinic_service: Annotated[ClinicService, Inject]
 """Injected application service facade."""
@@ -177,7 +178,7 @@ def init_owner_update_form(ownerId: int) -> dict:
 def process_owner_update_form(ownerId: int, form: Annotated[OwnerForm, Body]):
     existing = clinic_service.find_owner_by_id(ownerId)
     if existing is None:
-        return HttpResponse.notFound()
+        return entity_not_found()
     errors = validation_errors(form)
     if errors:
         form.id = ownerId
@@ -215,7 +216,7 @@ def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
 
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None:
-        return HttpResponse.notFound()
+        return entity_not_found()
     errors = validation_errors(form)
     pet_type = pet_type_for(form, errors)
     if errors:
@@ -244,7 +245,7 @@ def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, B
     owner = clinic_service.find_owner_by_id(ownerId)
     pet = clinic_service.find_pet_by_id(petId)
     if owner is None or pet is None:
-        return HttpResponse.notFound()
+        return entity_not_found()
     errors = validation_errors(form)
     pet_type = pet_type_for(form, errors)
     if errors:
@@ -271,7 +272,7 @@ def init_visit_creation_form(ownerId: int, petId: int) -> dict:
 def process_visit_creation_json(ownerId: int, petId: int, request: Annotated[VisitRequest, Body]):
     pet = clinic_service.find_pet_by_id(petId)
     if pet is None:
-        return HttpResponse.notFound()
+        return entity_not_found()
     form = VisitForm(date=request.date, description=request.description,
                      durationMinutes=str(request.durationMinutes), followUpPeriodMonths=str(request.followUpPeriodMonths))
     errors = visit_errors(form)

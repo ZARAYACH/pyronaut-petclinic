@@ -8,6 +8,7 @@ from jakarta.inject import Inject, Singleton
 from jakarta.validation import Valid, Validator
 from jakarta.validation.constraints import NotBlank, NotNull, Pattern
 from java.time import LocalDate
+from java.sql import SQLException
 from micronaut.context.annotation import Requires
 from micronaut.data.annotation import Id, JsonSubView, JsonView, MappedProperty, Relation
 from micronaut.data.annotation.sql import JoinColumn
@@ -16,12 +17,12 @@ from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
 from micronaut.data.repository import CrudRepository
 from micronaut.http import HttpResponse, HttpStatus, MediaType
-from micronaut.http.annotation import Body, Controller, Error, Get, Produces, Put
-from micronaut.http.server.exceptions import NotFoundException
+from micronaut.http.annotation import Body, Controller, Get, Put
 from micronaut.serde.annotation import Serdeable
 
 from .entities import Owner, Pet, Visit
 from .validation import violation_path
+from .errors import entity_not_found
 
 
 @Serdeable
@@ -89,7 +90,20 @@ class OwnerCareViewService:
 
 
 def missing_document():
-    raise NotFoundException()
+    return entity_not_found()
+
+
+def disallowed_operation(error) -> bool:
+    cause = error
+    while cause is not None and cause != None:
+        if isinstance(cause, SQLException):
+            sql = cause
+            while sql is not None and sql != None:
+                if sql.getErrorCode() in (40937, 40938, 40939, 40940, 42689):
+                    return True
+                sql = sql.getNextException()
+        cause = cause.getCause()
+    return False
 
 
 @Controller('/')
@@ -97,12 +111,6 @@ def missing_document():
 class OwnerCareRecordController:
     service: Annotated[OwnerCareViewService, Inject]
     validator: Annotated[Validator, Inject]
-
-
-    @Error(exception=NotFoundException)
-    @Produces(MediaType.APPLICATION_JSON)
-    def care_record_not_found(self, error: NotFoundException):
-        return HttpResponse.notFound({'message': error.getMessage()})
 
 
     @Get('/owners/{ownerId}/care-record')
@@ -134,10 +142,7 @@ class OwnerCareRecordController:
         except OptimisticLockException:
             return HttpResponse.status(HttpStatus.CONFLICT).body({'message': 'This owner record changed after it was loaded. Reload it before saving.'})
         except DataAccessException as error:
-            cause = error
-            while cause is not None:
-                if hasattr(cause, 'getErrorCode') and cause.getErrorCode() in (40937, 40938, 40939, 40940, 42689):
-                    return HttpResponse.badRequest({'message': 'The requested operation is not allowed.'})
-                cause = cause.getCause()
+            if disallowed_operation(error):
+                return HttpResponse.badRequest({'message': 'The requested operation is not allowed.'})
             raise
         return updated if updated is not None else missing_document()

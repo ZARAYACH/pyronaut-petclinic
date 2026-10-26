@@ -13,7 +13,7 @@ from micronaut.context.annotation import Requires, Value
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Query
 from micronaut.data.exceptions import DataAccessException
 from micronaut.data.repository import GenericRepository
-from micronaut.http import HttpResponse, HttpStatus, MediaType
+from micronaut.http import HttpRequest, HttpResponse, HttpStatus, MediaType
 from micronaut.http.annotation import Controller, Error, Get, Post, Produces, QueryValue
 from micronaut.http.exceptions import HttpStatusException
 from micronaut.scheduling.annotation import ExecuteOn
@@ -192,5 +192,8 @@ class OracleTransactionPriorityController:
                                                                     [with_status(a, AppointmentStatus(status_name(a.status))) for a in self.appointments.findAvailableAppointments()]))
 
     @Error(exception=HttpStatusException)
-    def lab_error(self, error: HttpStatusException):
-        return HttpResponse.status(error.getStatus()).body({'message': error.getMessage()})
+    def lab_error(self, request: HttpRequest, error: HttpStatusException):
+        body = {'message': error.getMessage()}
+        if error.getStatus() == HttpStatus.NOT_FOUND:
+            body['path'] = request.getPath()
+        return HttpResponse.status(error.getStatus()).body(body)
