@@ -23,6 +23,9 @@ from jakarta.validation.constraints import Digits, NotBlank, NotNull
 from micronaut.core.annotation import Creator, Introspected
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation, Transient
 from micronaut.serde.annotation import Serdeable
+from micronaut.data.annotation.sql import ETaggable, GeneratedETag
+
+from .etags import EMPTY_SPECIALITIES_HASH
 
 
 @Serdeable
@@ -114,21 +117,24 @@ class Visit:
 
 @Serdeable
 @MappedEntity("VETS")
+@ETaggable
 @dataclass
 class Vet:
-    """A veterinarian. Specialities are joined through ``VetSpeciality``."""
+    """ETag inputs follow the reference's positional SQL function signature."""
 
-    firstName: Annotated[str, NotBlank, MappedProperty("FIRST_NAME")]
-    lastName: Annotated[str, NotBlank, MappedProperty("LAST_NAME")]
     id: Annotated[int | None, Id, GeneratedValue] = None
+    firstName: Annotated[str | None, NotBlank, MappedProperty("FIRST_NAME")] = None
+    lastName: Annotated[str | None, NotBlank, MappedProperty("LAST_NAME")] = None
+    specialitiesHash: Annotated[str, MappedProperty("SPECIALITIES_ETAG_HASH")] = EMPTY_SPECIALITIES_HASH
+    etag: Annotated[str | None, GeneratedETag(function="SYS_ROW_ETAG")] = None
     specialities: Annotated[list[Speciality], Transient] = field(default_factory=list)
 
     @staticmethod
     @Creator
-    def from_columns(firstName: str, lastName: str, id: int | None) -> "Vet":
-        """The persistence constructor excludes transient specialities, as in Java."""
-
-        return Vet(firstName=firstName, lastName=lastName, id=id)
+    def from_columns(id: int | None, firstName: str, lastName: str,
+                     specialitiesHash: str, etag: str | None) -> "Vet":
+        return Vet(id=id, firstName=firstName, lastName=lastName,
+                   specialitiesHash=specialitiesHash, etag=etag)
 
 
 @Serdeable
