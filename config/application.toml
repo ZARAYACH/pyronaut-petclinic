@@ -3,6 +3,18 @@
 [micronaut.application]
 name = 'pyronaut-petclinic'
 
+[endpoints.info]
+sensitive = false
+
+[endpoints.health]
+details-visible = 'AUTHENTICATED'
+
+[endpoints.health.jdbc]
+enabled = true
+
+[info.application]
+name = '${micronaut.application.name}'
+
 [micronaut.server.locale-resolution]
 default-locale = 'en'
 cookie-name = 'locale'
