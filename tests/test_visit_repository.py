@@ -1,6 +1,10 @@
 """Direct interval query contracts from Java VisitRepositoryTest."""
 
 import pytest
+from petclinic_test_support import DATABASE
+
+pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only reference feature')
+
 
 
 @pytest.fixture

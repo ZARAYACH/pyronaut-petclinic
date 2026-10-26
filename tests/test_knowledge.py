@@ -1,5 +1,10 @@
 """Integration checks for knowledge."""
 
+import pytest
+from petclinic_test_support import DATABASE
+
+pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only reference feature')
+
 
 
 def test_knowledge_search_uses_reference_vectors_and_ranked_database_query(client):

@@ -1,5 +1,10 @@
 """Integration checks for priority."""
 
+import pytest
+from petclinic_test_support import DATABASE
+
+pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only reference feature')
+
 import re
 import json
 

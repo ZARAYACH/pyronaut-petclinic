@@ -6,12 +6,6 @@ from pyronaut.test import MicronautTest, micronaut_test_fixture
 from petclinic_test_support import DATABASE
 
 
-@pytest.fixture(autouse=True)
-def oracle_feature_scope(request):
-    oracle_cases = ('test_visit_interval_', 'test_visit_search_', 'test_knowledge_',
-                    'test_owner_care_', 'test_priority_')
-    if DATABASE != 'oracle' and request.node.name.startswith(oracle_cases):
-        pytest.skip('This feature is enabled only in the reference Oracle environment')
 
 
 @pytest.fixture(scope="session")
