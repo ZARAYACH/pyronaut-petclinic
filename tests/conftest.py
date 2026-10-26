@@ -31,3 +31,13 @@ def client(application_context):
     """Create a Pyronaut requests session bound to the test context."""
 
     return requests.with_context(application_context)
+
+
+@pytest.fixture
+def vet_api(client, application_context):
+    from petclinic_test_support import VetApi
+    api = VetApi(client, application_context)
+    try:
+        yield api
+    finally:
+        api.cleanup()

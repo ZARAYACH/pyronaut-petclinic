@@ -30,7 +30,7 @@ from micronaut.views import View
 
 from .forms import OwnerForm, PetForm, VisitForm, VisitRequest
 from .mapper import FormMapper
-from .services import ClinicService, owner_search_model, owner_view_model, pet_view_model, vet_view_models
+from .services import ClinicService, owner_search_model, owner_view_model, pet_view_model
 from .validation import violation_field
 from .errors import entity_not_found
 
@@ -280,27 +280,3 @@ def process_visit_creation_json(ownerId: int, petId: int, request: Annotated[Vis
         return HttpResponse.badRequest({"message": "Validation failed", "errors": errors})
     persist_visit(form, pet)
     return redirect_to(f"/owners/{ownerId}")
-
-
-@Get("/vets")
-@View("vets/vetList")
-def show_vet_list() -> dict:
-    return {"vets": vet_view_models(clinic_service.find_all_vets())}
-
-
-@Get("/vets/html")
-@View("vets/vetList")
-def show_vet_list_html() -> dict:
-    return show_vet_list()
-
-
-@Get("/vets/json")
-@Produces(MediaType.APPLICATION_JSON)
-def show_vet_list_json() -> list:
-    """Return the same vet model as JSON.
-
-    ``@Produces`` selects the JSON media type instead of view rendering.
-    """
-
-    return [{"id": vet.id, "firstName": vet.firstName, "lastName": vet.lastName}
-            for vet in clinic_service.find_all_vets()]

@@ -15,11 +15,13 @@ def test_vets_html_and_json(client, application_context):
 
     json_response = client.get("/vets/json")
     assert json_response.status_code == 200
-    assert json_response.json() == _reference_http(application_context)['vets']
+    assert [{key: vet[key] for key in ('id', 'firstName', 'lastName')}
+            for vet in json_response.json()] == _reference_http(application_context)['vets']
+    assert all(vet['etag'] and isinstance(vet['specialities'], list) for vet in json_response.json())
 
 
 def test_vet_cache_reuses_values_until_invalidation(client, application_context):
-    """Observe a cache hit through HTTP after the underlying database changes."""
+    """ClinicService remains cached; the newer VetService CRUD reads stay fresh."""
 
     import java
 
@@ -32,17 +34,18 @@ def test_vet_cache_reuses_values_until_invalidation(client, application_context)
     original = None
     try:
         cache.invalidateAll()
-        warm = client.get('/vets/json').json()
-        original = next(vet['lastName'] for vet in warm if vet['id'] == 1)
+        service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
+        warm = service.find_all_vets()
+        original = next(vet.lastName for vet in warm if vet.id == 1)
         update.setString(1, 'CacheProbe')
         assert update.executeUpdate() == 1
-        assert client.get('/vets/json').json() == warm
-        assert 'James ' + original in client.get('/vets').text
-        service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
+        assert next(v['lastName'] for v in client.get('/vets/json').json() if v['id'] == 1) == 'CacheProbe'
+        assert 'James CacheProbe' in client.get('/vets').text
         assert next(v.lastName for v in service.find_all_vets() if v.id == 1) == original
         cache.invalidateAll()
         refreshed = client.get('/vets/json').json()
         assert next(vet['lastName'] for vet in refreshed if vet['id'] == 1) == 'CacheProbe'
+        assert next(v.lastName for v in service.find_all_vets() if v.id == 1) == 'CacheProbe'
         assert 'James CacheProbe' in client.get('/vets').text
     finally:
         if original is not None:

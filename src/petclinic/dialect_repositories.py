@@ -106,6 +106,15 @@ class H2VetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def findOneById(self, id: int) -> Vet | None: ...
 
 
+    def findAllOrderByLastName(self) -> list[Vet]: ...
+
+    @Query(value='DELETE FROM VET_SPECIALTIES WHERE VET_ID = :id', nativeQuery=True)
+    def deleteSpecialityLinks(self, id: int) -> None: ...
+
+    @Query(value='INSERT INTO VET_SPECIALTIES (VET_ID, SPECIALTY_ID) VALUES (:vetId, :specialityId)', nativeQuery=True)
+    def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
+
+
 @Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
 @JdbcRepository(dialect=Dialect.H2)
 class H2SpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
@@ -115,6 +124,11 @@ class H2SpecialityRepository(SpecialityRepository, CrudRepository[Speciality, in
 
     @Query("SELECT * FROM SPECIALTIES ORDER BY NAME", nativeQuery=True)
     def findAllOrderByName(self) -> list[Speciality]: ...
+
+
+    def findByName(self, name: str) -> Speciality | None: ...
+    def findAllByIdIn(self, ids: list[int]) -> list[Speciality]: ...
+    def existsByName(self, name: str) -> bool: ...
 
 
 @Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
@@ -258,6 +272,15 @@ class OracleVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def findOneById(self, id: int) -> Vet | None: ...
 
 
+    def findAllOrderByLastName(self) -> list[Vet]: ...
+
+    @Query(value='DELETE FROM VET_SPECIALTIES WHERE VET_ID = :id', nativeQuery=True)
+    def deleteSpecialityLinks(self, id: int) -> None: ...
+
+    @Query(value='INSERT INTO VET_SPECIALTIES (VET_ID, SPECIALTY_ID) VALUES (:vetId, :specialityId)', nativeQuery=True)
+    def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
+
+
 @Requires(env=['oracle'])
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleSpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
@@ -267,6 +290,11 @@ class OracleSpecialityRepository(SpecialityRepository, CrudRepository[Speciality
 
     @Query("SELECT * FROM SPECIALTIES ORDER BY NAME", nativeQuery=True)
     def findAllOrderByName(self) -> list[Speciality]: ...
+
+
+    def findByName(self, name: str) -> Speciality | None: ...
+    def findAllByIdIn(self, ids: list[int]) -> list[Speciality]: ...
+    def existsByName(self, name: str) -> bool: ...
 
 
 @Requires(env=['oracle'])
@@ -410,6 +438,15 @@ class MySqlVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def findOneById(self, id: int) -> Vet | None: ...
 
 
+    def findAllOrderByLastName(self) -> list[Vet]: ...
+
+    @Query(value='DELETE FROM VET_SPECIALTIES WHERE VET_ID = :id', nativeQuery=True)
+    def deleteSpecialityLinks(self, id: int) -> None: ...
+
+    @Query(value='INSERT INTO VET_SPECIALTIES (VET_ID, SPECIALTY_ID) VALUES (:vetId, :specialityId)', nativeQuery=True)
+    def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
+
+
 @Requires(env=['mysql'])
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlSpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
@@ -419,6 +456,11 @@ class MySqlSpecialityRepository(SpecialityRepository, CrudRepository[Speciality,
 
     @Query("SELECT * FROM SPECIALTIES ORDER BY NAME", nativeQuery=True)
     def findAllOrderByName(self) -> list[Speciality]: ...
+
+
+    def findByName(self, name: str) -> Speciality | None: ...
+    def findAllByIdIn(self, ids: list[int]) -> list[Speciality]: ...
+    def existsByName(self, name: str) -> bool: ...
 
 
 @Requires(env=['mysql'])
@@ -558,6 +600,15 @@ class PostgresVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def findOneById(self, id: int) -> Vet | None: ...
 
 
+    def findAllOrderByLastName(self) -> list[Vet]: ...
+
+    @Query(value='DELETE FROM "VET_SPECIALTIES" WHERE "VET_ID" = :id', nativeQuery=True)
+    def deleteSpecialityLinks(self, id: int) -> None: ...
+
+    @Query(value='INSERT INTO "VET_SPECIALTIES" ("VET_ID", "SPECIALTY_ID") VALUES (:vetId, :specialityId)', nativeQuery=True)
+    def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
+
+
 @Requires(env=['postgres'])
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresSpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
@@ -565,6 +616,11 @@ class PostgresSpecialityRepository(SpecialityRepository, CrudRepository[Speciali
     def findAllOrderByName(self) -> list[Speciality]: ...
 
     def findOneById(self, id: int) -> Speciality | None: ...
+
+
+    def findByName(self, name: str) -> Speciality | None: ...
+    def findAllByIdIn(self, ids: list[int]) -> list[Speciality]: ...
+    def existsByName(self, name: str) -> bool: ...
 
 
 @Requires(env=['postgres'])
