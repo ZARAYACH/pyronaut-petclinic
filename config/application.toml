@@ -52,4 +52,4 @@ image-tag = '23.26.2-faststart'
 
 [logger.levels]
 petclinic = 'DEBUG'
-io.micronaut.data.query = 'ERROR'
+'io.micronaut.data.query' = 'ERROR'

@@ -34,6 +34,11 @@ enabled = true
 client-timeout = 180
 additional-modules = ['jdbc-oracle-free', 'jdbc-postgresql', 'jdbc-mysql']
 
+[tool.pyronaut.validation]
+# This SDK schema expects an object; Test Resources requires a list of maps.
+# Keep runtime initialization verified by the Oracle tests (PORT-027).
+suppressions = ['test-resources.containers.oracle.copy-to-container']
+
 [tool.pyronaut.dependencies]
 boms = ['io.micronaut.data:micronaut-data-bom:5.2.3']
 runtime = [
