@@ -8,7 +8,8 @@ def test_reference_service_lookup_operations(client, application_context):
 
     service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
     assert len(service.find_all_pets()) >= 13
-    assert service.find_visit_by_id(1).id == 1
+    visit = service.find_visits_by_pet_id(1)[0]
+    assert service.find_visit_by_id(visit.id).id == visit.id
     assert service.find_vet_by_id(1).lastName == 'Carter'
     assert service.find_speciality_by_id(1).id == 1
     assert service.find_visit_by_id(999999) is None
