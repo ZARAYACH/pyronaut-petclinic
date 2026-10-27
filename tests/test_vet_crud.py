@@ -112,6 +112,21 @@ def test_vet_crud_rejects_invalid_specialities(client, ids, message):
     assert response.json()['message'] == message
 
 
+@pytest.mark.parametrize('value', ['1', 1.5, True, {'id': 1}, [1], 2147483648])
+def test_vet_crud_rejects_non_integer_identifiers(client, value):
+    response = client.post('/vets', json={'firstName': 'Valid', 'lastName': 'Name', 'specialityIds': [value]})
+    assert_json_error(response, 400)
+    assert response.json()['message'] == 'Invalid request value.'
+
+
+@pytest.mark.parametrize('selection', [None, []])
+def test_vet_crud_null_or_empty_selection_means_no_assignments(client, vet_api, selection):
+    response = client.post('/vets', json={'firstName': 'Null', 'lastName': 'Selection', 'specialityIds': selection})
+    assert response.status_code == 201, response.text
+    vet_api.vets.append(response.json()['id'])
+    assert response.json()['specialities'] == [] and response.json()['etag']
+
+
 @pytest.mark.parametrize('field,value', [('firstName', ''), ('firstName', ' '), ('firstName', 'x' * 256),
                                         ('lastName', ''), ('lastName', ' '), ('lastName', 'x' * 256)])
 def test_vet_crud_rejects_invalid_names_without_mutation(client, vet_api, field, value):

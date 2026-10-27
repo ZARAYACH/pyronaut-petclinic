@@ -90,9 +90,10 @@ class VetService:
         # identity is different from Python None. Compare null values directly.
         if any(id is None or id == None for id in values):
             domain_error(HttpStatus.BAD_REQUEST, 'Each speciality must have an id.')
-        requested = set(values)
-        if any(not isinstance(id, int) or isinstance(id, bool) for id in requested):
+        if any(not isinstance(id, int) or isinstance(id, bool) or
+               not -2147483648 <= id <= 2147483647 for id in values):
             domain_error(HttpStatus.BAD_REQUEST, 'Invalid request value.')
+        requested = set(values)
         resolved = list(self.specialities.findAllByIdIn(sorted(requested))) if requested else []
         if len(resolved) != len(requested):
             domain_error(HttpStatus.BAD_REQUEST, 'One or more specialities were not found.')
