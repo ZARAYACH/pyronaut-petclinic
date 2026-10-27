@@ -71,4 +71,4 @@ jobs:
         run: pyronaut install --progress off
 
       - name: Run PetClinic tests
-        run: pyronaut test --no-validate
+        run: pyronaut test
