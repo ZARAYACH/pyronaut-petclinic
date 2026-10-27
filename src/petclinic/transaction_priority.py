@@ -70,7 +70,10 @@ class BookingTaken(RuntimeError):
 
 
 def status_name(value) -> str:
-    return value.value if isinstance(value, AppointmentStatus) else value.name()
+    if isinstance(value, AppointmentStatus):
+        return value.value
+    name = value.name
+    return str(name() if callable(name) else name)
 
 
 def with_status(appointment, status: AppointmentStatus) -> Appointment:
