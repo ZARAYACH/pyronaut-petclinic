@@ -6,6 +6,17 @@ from petclinic_test_support import DATABASE
 pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only reference feature')
 
 
+def test_knowledge_repository_distance_threshold(application_context):
+    import java
+    from micronaut.data.model.vector.search import Score, ScoringFunction
+    chunks = application_context.java_ctx.getBean(java.type('petclinic.PetCareChunkRepository'))
+    embeddings = application_context.java_ctx.getBean(java.type('petclinic.StaticPetCareEmbeddingService'))
+    # Any valid query vector must be excluded by a negative cosine distance.
+    results = chunks.searchTop5ByEmbeddingNear(
+        embeddings.embed('What vaccinations does my puppy need?'), Score(-1.0), ScoringFunction.COSINE)
+    assert len(results.results()) == 0
+
+
 
 def test_knowledge_search_uses_reference_vectors_and_ranked_database_query(client):
     page = client.get('/knowledge')
