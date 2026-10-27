@@ -12,3 +12,5 @@ locations = ['classpath:db/mysql']
 [test-resources.containers.mysql]
 image-name = 'mysql'
 image-tag = '8.4.5'
+# The local Test Resources user creates the deterministic ETag routine.
+command = ['--log-bin-trust-function-creators=1']
