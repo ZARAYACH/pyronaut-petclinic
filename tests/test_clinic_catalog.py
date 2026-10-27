@@ -36,6 +36,21 @@ def test_catalog_accepts_forty_character_service_codes(client, application_conte
             application_context.java_ctx.getBean(java.type('petclinic.ClinicServiceOfferingRepository')).deleteById(id)
 
 
+def test_catalog_description_text_limit_round_trips_unicode(client, application_context):
+    import java
+    data = {'serviceCode': 'REVIEW_DESCRIPTION_LIMIT', 'name': 'Description limit',
+            'description': 'ñ' * 500, 'price': 20, 'durationMinutes': 30}
+    id = None
+    try:
+        saved = client.post('/clinics/1/services', json=data)
+        assert saved.status_code == 200, saved.text
+        id = saved.json()['id']
+        assert saved.json()['description'] == data['description']
+        rejected = client.post('/clinics/1/services', json={**data, 'description': data['description'] + 'ñ'})
+        assert rejected.status_code == 400 and 'description' in rejected.json()['errors']
+    finally:
+        if id is not None:
+            application_context.java_ctx.getBean(java.type('petclinic.ClinicServiceOfferingRepository')).deleteById(id)
 
 
 def test_clinic_catalog_upsert_preserves_identity_and_clinic_scope(client):

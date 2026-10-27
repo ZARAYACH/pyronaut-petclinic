@@ -127,6 +127,15 @@ def test_vet_crud_null_or_empty_selection_means_no_assignments(client, vet_api, 
     assert response.json()['specialities'] == [] and response.json()['etag']
 
 
+def test_vet_crud_name_text_limit_round_trips_unicode(client, vet_api):
+    response = client.post('/vets', json={'firstName': 'é' * 255, 'lastName': 'ü' * 255})
+    assert response.status_code == 201, response.text
+    record = response.json()
+    vet_api.vets.append(record['id'])
+    assert record['firstName'] == 'é' * 255 and record['lastName'] == 'ü' * 255
+    assert client.get('/vets/' + str(record['id'])).json() == record
+
+
 @pytest.mark.parametrize('field,value', [('firstName', ''), ('firstName', ' '), ('firstName', 'x' * 256),
                                         ('lastName', ''), ('lastName', ' '), ('lastName', 'x' * 256)])
 def test_vet_crud_rejects_invalid_names_without_mutation(client, vet_api, field, value):
