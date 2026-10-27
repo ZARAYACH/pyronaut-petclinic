@@ -4,6 +4,40 @@ import json
 from petclinic_test_support import _database_sql
 
 
+def test_catalog_spanish_translation_and_shared_edit_endpoint(client):
+    client.get('/locale', params={'lang': 'es', 'backUrl': '/clinics/1/services'}, allow_redirects=False)
+    try:
+        page = client.get('/clinics/1/services')
+        assert page.status_code == 200, page.text
+        for text in ('Servicios en Downtown Madison Pet Clinic', 'Nuevo servicio', 'Código del servicio'):
+            assert text in page.text
+        assert 'New service offering' not in page.text
+    finally:
+        client.get('/locale', params={'lang': 'en', 'backUrl': '/'}, allow_redirects=False)
+    edit = client.get('/clinics/1/services/WELLNESS_CHECK/edit')
+    assert edit.status_code == 200 and 'action="/clinics/1/services"' in edit.text
+    assert 'readonly' not in edit.text
+
+
+def test_catalog_accepts_forty_character_service_codes(client, application_context):
+    import java
+    code = 'REVIEW_' + 'C' * 33
+    data = {'serviceCode': code, 'name': 'Long clinic-local code', 'price': 68, 'durationMinutes': 45}
+    id = None
+    try:
+        response = client.post('/clinics/2/services', json=data)
+        assert response.status_code == 200, response.text
+        id = response.json()['id']
+        assert response.json()['serviceCode'] == code
+        rejected = client.post('/clinics/2/services', json={**data, 'serviceCode': code + 'X'})
+        assert rejected.status_code == 400 and 'serviceCode' in rejected.json()['errors']
+    finally:
+        if id is not None:
+            application_context.java_ctx.getBean(java.type('petclinic.ClinicServiceOfferingRepository')).deleteById(id)
+
+
+
+
 def test_clinic_catalog_upsert_preserves_identity_and_clinic_scope(client):
     first_catalog = client.get("/clinics/1/services")
     assert first_catalog.status_code == 200, first_catalog.text

@@ -8,9 +8,13 @@ DATABASE = os.environ.get('PETCLINIC_TEST_DATABASE', 'oracle')
 
 
 def _reference_http(application_context):
+    return _fixture(application_context, 'reference-http.json')
+
+
+def _fixture(application_context, name):
     import java
     environment = application_context.java_ctx.getEnvironment()
-    resource = environment.getResourceAsStream('fixtures/reference-http.json')
+    resource = environment.getResourceAsStream('fixtures/' + name)
     assert resource.isPresent()
     stream = resource.get()
     try:
