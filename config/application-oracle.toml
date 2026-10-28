@@ -1,7 +1,4 @@
 [datasources.default]
-url = '${auto.test.resources.datasources.default.url:jdbc:oracle:thin:@localhost:1521/FREEPDB1}'
-username = '${auto.test.resources.datasources.default.username:petclinic}'
-password = '${auto.test.resources.datasources.default.password:petclinic}'
 db-type = 'oracle'
 driver-class-name = 'oracle.jdbc.OracleDriver'
 dialect = 'ORACLE'
@@ -15,3 +12,11 @@ version = '23.1'
 
 [flyway.datasources.default]
 locations = ['classpath:db/migration']
+
+# Use the regular spatial-capable image already cached for the showcase.
+[test-resources.containers.oracle]
+image-name = 'gvenzl/oracle-free'
+image-tag = '23.26.2-faststart'
+
+[[test-resources.containers.oracle.copy-to-container]]
+'config/oracle/01-priority.sql' = '/container-entrypoint-initdb.d/01-priority.sql'

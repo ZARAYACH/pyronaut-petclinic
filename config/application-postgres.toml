@@ -1,7 +1,4 @@
 [datasources.default]
-url = '${auto.test.resources.datasources.default.url:jdbc:postgresql://localhost:5432/petclinic}'
-username = '${auto.test.resources.datasources.default.username:petclinic}'
-password = '${auto.test.resources.datasources.default.password:petclinic}'
 db-type = 'postgres'
 driver-class-name = 'org.postgresql.Driver'
 dialect = 'POSTGRES'

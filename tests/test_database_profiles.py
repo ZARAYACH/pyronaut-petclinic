@@ -10,8 +10,12 @@ def test_database_profile_and_oracle_feature_gates(client, application_context):
     source = java.type('io.micronaut.data.connection.jdbc.advice.DelegatingDataSource').unwrapDataSource(source)
     connection = source.getConnection()
     try:
-        assert connection.getMetaData().getDatabaseProductName() == {
+        metadata = connection.getMetaData()
+        assert metadata.getDatabaseProductName() == {
             'h2': 'H2', 'mysql': 'MySQL', 'postgres': 'PostgreSQL', 'oracle': 'Oracle'}[DATABASE]
+        assert metadata.getURL().startswith({
+            'h2': 'jdbc:h2:', 'mysql': 'jdbc:mysql:',
+            'postgres': 'jdbc:postgresql:', 'oracle': 'jdbc:oracle:'}[DATABASE])
     finally:
         connection.close()
     if DATABASE != 'oracle':

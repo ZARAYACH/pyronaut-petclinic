@@ -1,7 +1,4 @@
 [datasources.default]
-url = '${auto.test.resources.datasources.default.url:jdbc:mysql://localhost:3306/petclinic}'
-username = '${auto.test.resources.datasources.default.username:petclinic}'
-password = '${auto.test.resources.datasources.default.password:petclinic}'
 db-type = 'mysql'
 driver-class-name = 'com.mysql.cj.jdbc.Driver'
 dialect = 'MYSQL'

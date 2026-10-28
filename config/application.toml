@@ -38,29 +38,8 @@ paths = ['file:static']
 expire-after-write = '60s'
 maximum-size = 100
 
-[datasources.default]
-url = 'jdbc:h2:mem:petclinic;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE'
-username = 'sa'
-password = ''
-db-type = 'h2'
-driver-class-name = 'org.h2.Driver'
-schema-generate = 'NONE'
-dialect = 'H2'
-maximum-pool-size = 2
-minimum-idle = 1
-
 [flyway.datasources.default]
 enabled = true
-locations = ['classpath:db/h2']
-
-# Spatial types are removed from the slim image. Use the regular image for
-# the clinic geospatial showcase and pin its version for repeatable runs.
-[test-resources.containers.oracle]
-image-name = 'gvenzl/oracle-free'
-image-tag = '23.26.2-faststart'
-
-[[test-resources.containers.oracle.copy-to-container]]
-'config/oracle/01-priority.sql' = '/container-entrypoint-initdb.d/01-priority.sql'
 
 [logger.levels]
 petclinic = 'DEBUG'
