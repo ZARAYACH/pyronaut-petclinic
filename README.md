@@ -44,7 +44,7 @@ type = 'jvm'
 ```text
 config/          Micronaut application configuration
 src/             Python application code
-src-java/        Static JVM function adapter used by H2's ETag SQL alias
+src-java/        H2 ETag SQL adapter and early database configuration bootstrap
 static/          Static web assets
 tests/           Pytest test suite
 tests-config/    Test-specific Micronaut configuration
@@ -52,6 +52,18 @@ views/           HTML template files
 ```
 
 Generated files are written under `__pyronaut__/` and local Test Resources state is written under `.micronaut/`. Both directories are intentionally ignored by Git.
+
+Application layers under `src/petclinic/` are split into packages:
+
+| Package | Contents |
+| --- | --- |
+| `repositories/` | Contracts and dialect implementations grouped by owners, pets, visits, vets, clinics, appointments, care records and knowledge |
+| `services/` | Shared clinic facade, feature services, embeddings, startup loading and presentation helpers |
+| `controllers/` | Routes grouped by functionality, shared form helpers and global error handlers |
+
+These are Python namespace packages: Pyronaut generates their runtime `__init__.py` files. Feature modules alongside them retain entities, request/response models and enums. Import a class from its owning module, such as `petclinic.repositories.owners` or `petclinic.services.vets`.
+
+Concrete dialect repositories retain their explicit CRUD/query declarations because the inherited generic and dialect metadata paths still need framework workarounds (PORT-035/039).
 
 ## Install Dependencies
 
@@ -74,6 +86,10 @@ The application starts with H2 on the default Micronaut port, usually `http://lo
 ```bash
 MICRONAUT_ENVIRONMENTS=oracle pyronaut dev
 ```
+
+Shared `application.toml` contains no datasource settings. H2 connection and migration settings live in `application-h2.toml`; a small Micronaut context configurer loads that fallback only when no database profile is active, including ordinary `dev` and `test` startup. Explicit database profiles load their own configuration without inheriting H2 values. Test Resources resolves external connection details; an existing server can be configured through `DATASOURCES_DEFAULT_URL`, `DATASOURCES_DEFAULT_USERNAME` and `DATASOURCES_DEFAULT_PASSWORD`.
+
+`pyronaut dev` starts Test Resources for development. `pyronaut run` uses an existing database and needs its connection settings; `pyronaut run dev` passes `dev` as an application argument rather than selecting development mode.
 
 The visits search, knowledge, priority and care-record routes below are enabled only in the `oracle` environment, matching the reference. Ordinary visit creation and history are shared by all profiles.
 
@@ -131,7 +147,7 @@ MySQL Test Resources enables creation of the deterministic ETag routine in its l
 
 The regular Oracle image includes spatial types; the slim image cannot run that feature. PostgreSQL uses PostGIS for the same spatial operations. CI selects the same pinned images in a four-profile matrix and downloads them only when its image cache is missing. Local verification uses the existing cached images.
 
-The migrations provide visit intervals, 20 clinic branches, 62 service offerings and appointment fixtures. Oracle additionally has native interval/vector storage and the owner-care duality view; its startup loader reads the reference's 10 knowledge documents and 20 chunks. Oracle Deep Data Security is deferred. Fixture lifecycle differences and the remaining parity checks are tracked in the assessment and issue log.
+The migrations provide visit intervals, 20 clinic branches, 62 service offerings and appointment fixtures. Oracle additionally has native interval/vector storage and the owner-care duality view; its startup loader reads the reference's 10 knowledge documents and 20 chunks. Oracle Deep Data Security is deferred. Fixture lifecycle differences and remaining parity checks are tracked in the issue log.
 
 Run SDK commands from the project root so Test Resources can copy the Oracle priority setup script from `config/oracle/01-priority.sql`. The booking pause defaults to 15 seconds, matching the reference.
 

@@ -28,6 +28,10 @@ Oracle-only modules declare `pytest.mark.skipif` explicitly. Ordinary visit crea
 
 The HTTP fixture is non-transactional so requests use their real service transactions. The direct locking regression opens an explicit write transaction, matching the Java source test's transaction boundary. Java enum mirrors are compared by their normalized names. A Java HTTP client is used for blank `If-Match` values because the SDK requests client rejects them before sending.
 
+Pytest uses Python stream capture (`--capture=sys`, configured in `pyproject.toml`) because the updated embedded runner fails with default file-descriptor capture. Care-record children retain their field constraints and are validated explicitly; nested collection `Valid` annotations generate invalid Java on SDK 0.1.1. See PORT-018/051 in the issue log.
+
+Repository and service Java mirrors now live under `petclinic.repositories` and `petclinic.services`. Python imports use the owning functionality module. The profile regression checks the actual database product and JDBC URL, including the default H2 fallback when the fixture selects only the `test` environment.
+
 Add tests to the relevant functionality module. Use dedicated records and clean them up when mutating canonical data. Some older workflow fixtures intentionally live for the session, so use actual repository IDs and avoid assuming a suite-wide row count or sequence value. Configuration validation runs with one documented SDK schema suppression; see `pyproject.toml`.
 
 Known limitations and final verification results are recorded in the [issue log](../docs/porting-issues.md). Source-derived geometry fixtures live in `tests-config/fixtures/`, loaded through the application environment rather than paths beside generated test sources.

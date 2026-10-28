@@ -1,12 +1,14 @@
 # PetClinic port: open issues and retained workarounds
 
-Updated: 2026-10-28 (ownership triage). Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
+Updated: 2026-10-28 (ownership triage and SDK follow-up). Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
 
 This is a working log for filing issues later. No external issues have been created. It retains open issues, framework improvements, unresolved investigations and active workarounds. Local environment/provisioning issues and fully resolved entries needing no workaround are excluded. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
-**Latest scope:** the user authorized a full review, functionality-based tests, and the newer veterinarian ETag/exception changes. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
+**Latest scope:** check the updated local Java reference, organize repositories/services/controllers by functionality, verify SDK 0.1.1 compatibility, and isolate datasource profiles. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
 
 ## Reproduction versions and configuration
+
+The original findings used the versions below. The latest checkpoint records the SDK 0.1.1 verification separately.
 
 - Pyronaut SDK `0.0.3`; Micronaut Core `5.2.2`; SDK platform `5.1.0`.
 - Micronaut Data runtime/processor `5.2.3`; Micronaut Serialization `3.1.0`.
@@ -18,17 +20,17 @@ Record a reduced reproduction and reconfirm it before opening an upstream issue.
 
 ## Ownership triage (2026-10-28)
 
-All **27 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
+All **28 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
 
 | Primary classification | Entries | Meaning |
 | --- | ---: | --- |
-| Framework candidate | 12 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
+| Framework candidate | 13 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
 | Framework improvement | 5 | Interop documentation, diagnostics or capability configuration; no correctness defect established |
 | Application/test | 3 | Open application work or implementation choices still needing verification/workarounds |
 | Reference application | 3 | Java sample behavior or schema; not automatically a Pyronaut issue |
 | Unresolved | 4 | Evidence does not yet distinguish application setup from a library/runtime defect |
 
-Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 12 framework candidates, **11 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 11 proven Pyronaut defects.
+Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 13 framework candidates, **12 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 12 proven Pyronaut defects.
 
 ### Complete disposition
 
@@ -55,12 +57,13 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-035 | Framework candidate | **Pyronaut generic bridge generation.** Nested repository inheritance emits signatures that clash or fail to override. The Java structure compiles; retain the verified direct-CRUD workaround and reduce generated signatures. |
 | PORT-038 | Reference application | **Source decimal DDL.** Scale-zero H2 `DECIMAL` loses fractions as declared. The reference schema/mapping needs a fix; ours explicitly preserves scale. A Data schema-generation claim needs an annotation-contract reproduction first. |
 | PORT-039 | Framework candidate | **Pyronaut AST / Data query specialization.** Inherited queries execute SQL from another dialect despite correct bean selection. Redeclarations fix all profiles. Reduce owning-type metadata; not a missing spatial extension. |
-| PORT-040 | Framework candidate | **Pyronaut test reporting.** Archived XML directly contradicts its child counts and drops parameter identities. Fix the report producer; this does not indicate the skipped features passed. |
+| PORT-040 | Framework candidate | **Pyronaut test reporting.** SDK 0.1.1 still reports zero suite-level skips despite skipped child cases. Count the children; skipped features are not passed features. |
 | PORT-042 | Application/test | **Open application lifecycle gap.** Core SQL seeds ignore `petclinic.sample-data.enabled=false`. Separate conditional fixtures safely from schema migration history; the framework already supports conditional beans. |
 | PORT-043 | Unresolved | **Removed fixture experiment.** Its resource lookup failure is historical and not reproducible from the current tree. First establish processed-resource presence and context configuration; no upstream owner assigned. |
 | PORT-045 | Framework candidate | **Mixed:** nullable typed IDs becoming zero (**045a**) warrant a binding/serialization defect investigation; `ForeignNone` identity in object collections (**045b**) is an interop adaptation. Reject malformed inputs before deduplication in our code. |
 | PORT-046 | Framework candidate | **Micronaut Data ETag SQL generation.** Unquoted mapped identifiers break PostgreSQL. Generated lowercase aliases are our workaround; prove the Java control before describing this as Pyronaut-specific. PostgreSQL identifier folding is expected. |
 | PORT-051 | Framework candidate | **Embedded pytest capture on SDK 0.1.1.** Default file-descriptor capture aborts pytest before cases run. Python stream capture permits execution; retain `--capture=sys` in pytest configuration and reduce the runner/filesystem interaction. |
+| PORT-052 | Framework candidate | **Python exception mirrors across service boundaries.** An already-taken booking becomes a Java exception mirror; checking the Python exception type raises an interop attribute error. Detect its generated Java type first while preserving the HTTP 409 outcome. |
 
 ### Framework defect investigation queue
 
@@ -69,7 +72,7 @@ Priorities below reflect potential impact without our workarounds, not current f
 | Order | Candidate and likely first owner | Evidence / impact | Smallest useful reproduction and acceptance condition |
 | ---: | --- | --- | --- |
 | 1 | PORT-045a — Pyronaut binding / Serialization | Strong: nullable integer elements change meaning; input integrity | One DTO with `list[int \| None]`, explicit boxed-integer variant and an echo route. Send `[null]`, `[0]`, `[1]`; inspect raw deserialized values and generated metadata. Null must remain null. Compare a Java DTO to separate Serde from the Python binding layer. |
-| 2 | PORT-018b — Pyronaut type-use metadata / Validation | Strong: invalid nested data reaches Oracle | Parent with `list[Annotated[Child, Valid]]`; child with `NotBlank`. Invoke `Validator` without a database and inspect generic-argument annotations. A blank child's violation must include its collection path; compare the Java equivalent. Exclude the incorrect original field annotation. |
+| 2 | PORT-018b — Pyronaut type-use metadata / Validation | Strong: invalid nested data reaches Oracle | Parent with `list[Annotated[Child, Valid]]`; child with `NotBlank`. Invoke `Validator` without a database and inspect generic-argument annotations. First check that generated constructors compile without leaking internal validation annotations. Once processing succeeds, a blank child must produce an indexed violation; compare the Java equivalent. |
 | 3 | PORT-035 — Pyronaut compiler | Strong: generated Java does not compile | One shared generic CRUD protocol and one dialect subclass. Attach generated signatures and javac errors beside the compiling Java equivalent. Generated methods must preserve bounds/wildcards and implement the interface. |
 | 4 | PORT-039 — Pyronaut / Data metadata | Strong: wrong-dialect SQL at runtime | One inherited annotated query and two dialect implementations. Inspect each generated query independently and together. Each must retain its owning implementation's dialect; include a Java control before narrowing ownership. |
 | 5 | PORT-001 — Pyronaut script execution | Tentative ownership: route hangs; class-controller control works | Same trivial route as a script and class controller, with/without `ExecuteOn`. Capture timeouts and thread/context evidence, without Oracle or priority transactions. Blocking requests must complete and independent requests must overlap. |
@@ -77,9 +80,10 @@ Priorities below reflect potential impact without our workarounds, not current f
 | 7 | PORT-020 — Pyronaut annotation bindings | Strong: generated import targets missing module | Import only `OracleTransactional` plus the Jakarta transactional annotation. Process/start a minimal bean; inspect generated imports. Every imported stereotype binding must be present without a redundant application import. |
 | 8 | PORT-046 — Micronaut Data processor | Strong: generated expression and PostgreSQL trace agree | Minimal Java and Python entities with quoted uppercase ETag input columns. Inspect `GeneratedETagUtils` output and perform one PostgreSQL read/update without aliases. Expression identifiers must follow dialect quoting while retaining generated optimistic locking. |
 | 9 | PORT-027b — Pyronaut configuration schema / Test Resources metadata | Strong: working runtime shape is schema-invalid | Submit the same list-of-maps copy configuration to SDK validation and the runtime provider. Attach generated schema and provider contract. Validation must accept the supported shape without suppression; investigate whether schema generation or upstream metadata declares the wrong type. |
-| 10 | PORT-040 — Pyronaut test report producer | Strong: archived XML proves inconsistency | One pass, one skip and a parameterized test. Compare XML attributes with emitted children and parameter IDs. Counts must agree and each parameter case must be identifiable. No database needed. |
+| 10 | PORT-040 — Pyronaut test report producer | Strong: archived XML proves skip-count inconsistency | One pass and one skip. Compare the suite's `skipped` attribute with skipped children. Counts must agree. No database needed. |
 | 11 | PORT-022 — Pyronaut HTTP conversion / Core | Tentative ownership: lowercase binding fails | One enum query route, Python and Java equivalents. Compare uppercase, lowercase, missing and invalid values plus converter registration. Supported lowercase values must bind; invalid values must produce the agreed client-error response. Isolate conversion from our generic HTML handler. |
 | 12 | PORT-051 — Pyronaut embedded pytest / GraalPy filesystem | Strong: unchanged suite fails before execution; stream-capture control passes | One assertion-only test under default capture and `--capture=sys`, with SDK 0.1.1 and matching GraalPy. Preserve the original exception and identify the missing capture path. The default runner must execute ordinary tests or select supported capture automatically. |
+| 13 | PORT-052 — Pyronaut exception interop | Strong: real taken-booking response fails; Java-type control passes | Raise a Python custom exception from an intercepted service and catch it in a separate controller module. Compare Java/Python type checks on the received mirror. Normal exception classification must not raise a missing internal-attribute error. |
 
 File one issue per independently reproducible cause. PORT-035 and PORT-039 are related metadata areas but exhibit distinct compilation and query-specialization failures. Validation-path formatting (PORT-015) and repository/enum mirror handling (PORT-021) are interop improvement requests, not extra constraint or persistence bugs. PORT-027 concerns validation of the correct runtime configuration shape.
 
@@ -110,9 +114,9 @@ Browser/CDN availability, packaged resources, production configuration and remot
 
 This triage checked the current Python care-record and vet implementations, configuration suppression, local Java `OwnerCareView`, local Data `MappedEntityVisitor`/`GeneratedETagUtils`, and Test Resources `TestContainerMetadataSupport`, alongside the recorded failures. Local framework source checkouts support the investigation; establish the exact dependency/source revision in each reduced reproduction before treating them as the installed binary's implementation.
 
-The preserved H2 report at `__pyronaut__/reports/review-20261026/h2/junit.xml` was read directly during triage: 121 child cases, 20 skipped children, but suite attributes `tests="81"` and `skipped="0"`. Ten testcase identities repeat across parameterized children. This confirms the recorded reporting inconsistency without rerunning tests. Generated reports remain local/ignored and must be attached explicitly when filing.
+The SDK 0.1.1 H2 report at `__pyronaut__/reports/refactor-20261028/final/h2/junit.xml` has 121 child cases and 20 skipped children, but the suite attribute is still `skipped="0"`. Total-case counting and parameter identities now agree with the children, so those resolved portions are excluded from PORT-040. Generated reports remain local/ignored and must be attached explicitly when filing.
 
-For each candidate, record the installed versions above, original failure, smallest standalone source, generated metadata/SQL or traceback, Java control where relevant, workaround and expected behavior. Reconfirm on a supported aligned toolchain and check whether the issue already exists or is fixed before filing. A single startup failure causing many test failures is one cause, not one issue per failed test. No application/framework code was changed and no new tests were run for this triage.
+For each candidate, record the installed versions above, original failure, smallest standalone source, generated metadata/SQL or traceback, Java control where relevant, workaround and expected behavior. Reconfirm on a supported aligned toolchain and check whether the issue already exists or is fixed before filing. A single startup failure causing many test failures is one cause, not one issue per failed test. The original ownership triage changed documentation only. Subsequent application corrections and reruns are recorded in the latest checkpoint; no upstream framework code was patched.
 
 ## Detailed findings
 
@@ -183,7 +187,7 @@ For each candidate, record the installed versions above, original failure, small
 
 - **Observed (PORT-018b):** With the reference's correct element annotations (`list[Annotated[PetCareSubView, Valid]]`), valid nested updates and stale ETAG handling pass, but a blank child name bypasses cascade validation and reaches Oracle, causing `ORA-42692` / `ORA-01407` and HTTP 500.
 - **SDK 0.1.1 regression (2026-10-28):** Before the package refactor, the unchanged application fails processing with Core `5.2.19` / Validation `5.2.1`. Generated `PetCareSubView` and `OwnerCareView` constructors put `@ValidatedElement @RequiresValidation` on collection parameters/casts, where those annotations are not applicable. The compiler reports `annotation interface not applicable to this kind of declaration`. This is a generated-code failure, independent of database startup or the refactor.
-- **Current workaround:** Omit element-level `Valid` on `pets` and `visits` and explicitly invoke Jakarta `Validator` on each child bean, prefixing its validation path with the collection index. Child field constraints and object-level metadata validation remain intact. The older manual traversal already covered valid updates, blank child fields, null child dates and metadata checks; the updated SDK is being verified separately.
+- **Current workaround:** Omit element-level `Valid` on `pets` and `visits` and explicitly invoke Jakarta `Validator` on each child bean, prefixing its validation path with the collection index. Child field constraints and object-level metadata validation remain intact. The older manual traversal already covered valid updates, blank child fields, null child dates and metadata checks; the SDK 0.1.1 Oracle care-record cases also pass with this adaptation.
 - **Evidence:** The unchanged-source compiler dump is preserved locally at `/private/tmp/pyronaut-petclinic-refactor-20261028/__pyronaut__/processor-error-dumps/pyronaut-compiler-error-20261028-124852-290.log`. Reduce constructor annotation propagation on SDK 0.1.1 separately from the older missed-cascade behavior.
 - **Issue disposition:** Element-cascade integration candidate; reduce it using the correct element annotations before filing upstream. The completed annotation-placement correction is excluded from this entry.
 
@@ -274,15 +278,13 @@ For each candidate, record the installed versions above, original failure, small
 - **Workaround (verified across all profiles):** Redeclare the same annotated custom query signatures on each dialect implementation so each declaration has a distinct owning type. Keep shared query contracts for injection and generated CRUD directly on the concrete implementations. All 16 shared checks pass on H2, PostgreSQL and MySQL, and all 26 Oracle checks pass, including the previously failing lookup and joined catalog paths. Spatial and upsert operations still use Micronaut Data generation; they were not replaced by custom persistence code.
 - **Issue disposition:** SDK/Micronaut Data Python inherited query ownership/metadata specialization candidate. Reduce with one shared query, two dialect subclasses and inspection of both generated SQL definitions.
 
-### PORT-040 — JUnit suite summary reports zero skips while ten cases are skipped
+### PORT-040 — JUnit suite summary reports zero skips despite skipped cases
 
-- **Observed:** The H2 CLI reports `16 tests passed, 10 skipped in 15.2s`. Its JUnit XML contains 26 test cases and ten `<skipped>` elements, but the suite attribute is `skipped="0"`.
-- **Evidence:** Preserved H2 artifacts under `__pyronaut__/reports/database-profiles/h2/`; the individual skipped elements identify the Oracle-only cases.
-- **Impact:** Tools relying on suite-level counts can report misleading coverage totals. This does not mean those ten Oracle features were verified on H2.
-- **Workaround:** Read the actual child test results and the CLI summary when reporting profile coverage; do not report all 26 cases as passed.
-- **Issue disposition:** SDK pytest/JUnit reporting consistency candidate. Reduce with an unconditional `pytest.skip` before filing.
-
-During the expanded 2026-10-27 review, the final H2 XML contained **121 child cases / 20 actual skips**, while the suite attributes reported **`tests="81"` and `skipped="0"`**. Parameterized child cases also share their function name rather than retaining unique parameter IDs. The report uses child results and CLI summaries, not those suite attributes.
+- **Observed on SDK 0.1.1:** The H2 CLI reports 101 passed / 20 skipped. Its XML contains 121 test cases and twenty `<skipped>` elements, but the suite attribute is `skipped="0"`.
+- **Evidence:** `__pyronaut__/reports/refactor-20261028/final/h2/junit.xml`; the individual skipped elements identify the Oracle-only cases.
+- **Impact:** Tools relying on suite-level skip counts can report misleading coverage totals. This does not establish Oracle feature coverage on H2.
+- **Workaround:** Count actual child results and use the CLI summary when reporting profile coverage.
+- **Issue disposition:** Remaining SDK pytest/JUnit skip-count consistency candidate. Reduce with one unconditional `pytest.skip` before filing. The older total-case and duplicate-parameter-name problems are resolved in this SDK and are no longer issue candidates here.
 
 ### PORT-042 — Core fixture migrations bypass the sample-data configuration switch
 
@@ -360,9 +362,16 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 - **Workaround:** Configure `[tool.pytest.ini_options] addopts = '--capture=sys'` in `pyproject.toml`. Stream capture retains Python output without pytest's default file-descriptor capture. The missing path and exact runtime ownership still need a minimal reproduction.
 - **Evidence:** Local logs `/private/tmp/pyronaut-refactor-compatibility-h2.log` and `/private/tmp/pyronaut-refactor-runner-probe.log`. No upstream framework code was changed.
 
+### PORT-052 — Custom Python exception classification fails across a service boundary
+
+- **Observed on SDK 0.1.1:** After separating the priority service and controller, the real already-taken booking request returns HTML 500 instead of JSON 409. The service's custom `BookingTaken` exception reaches the controller as its generated Java mirror; Python classification fails with `AttributeError: foreign object has no attribute '__micronaut_python_object__'`.
+- **Evidence:** The initial Oracle matrix passes 119 cases and fails only `test_priority_booking_commits_and_reports_taken_appointments`. Logs and XML are retained under `__pyronaut__/reports/refactor-20261028/oracle-initial/`; the corrected full run is archived under `final/oracle/`. Other priority overlap/rollback checks pass.
+- **Workaround (focused HTTP check and full Oracle suite passed):** Recognize `java.type('petclinic.BookingTaken')` before checking the Python `BookingTaken` class. Keep native Python classification for local exceptions. The original end-to-end booking/taken/reset test then passes without changing service transactions or response expectations.
+- **Issue disposition:** Generated exception-mirror/inter-context integration candidate. Reduce across two small modules before assigning the exact framework owner; this was observed with the new package boundaries, not proven to affect every custom exception or older SDK release.
+
 ## Latest verification checkpoint
 
-The final 2026-10-27 runs collected 121 cases per profile, with zero failures/errors:
+The final **2026-10-28** runs collected 121 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. Reports, CLI logs and a source-content manifest are retained locally under `__pyronaut__/reports/refactor-20261028/final/`.
 
 | Profile | Passed | Expected skips |
 | --- | ---: | ---: |
@@ -371,4 +380,10 @@ The final 2026-10-27 runs collected 121 cases per profile, with zero failures/er
 | PostgreSQL | 100 | 20 Oracle-only and 1 H2-only case |
 | MySQL | 100 | 20 Oracle-only and 1 H2-only case |
 
-Configuration validation is enabled with the single documented Test Resources suppression. Core sample-data lifecycle parity, model/helper equivalence, concurrent first catalog insertion, browser behavior, packaged execution and remote CI remain outside this checkpoint. No external issues or remote pushes were created.
+The existing local Java reference advanced from `0ad5747` to `f0e444e`. Its seven changed files contain dependency/build updates only: no application code, tests, templates or resources changed. Maven/Gradle parent settings, Java native-build metadata and the Java CI GraalVM action are not copied into the SDK-managed Python build. This check validates the port on the installed SDK stack; dependency versions are not claimed to be identical to the Java build.
+
+Repositories, services and controllers are now namespace packages organized by functionality. Explicit concrete query declarations, generated CRUD/ETag predicates, singleton service scopes and transaction annotations remain intact. The profile check asserts both the live database product and JDBC URL. H2 settings live in a separate configuration file and are loaded only as a fallback when no database profile is selected; external profiles contain no inherited H2 connection settings.
+
+A plain `pyronaut dev` startup with no database environment used H2, served health/vets/clinics, and kept Oracle-only care records unavailable (404). A real `MICRONAUT_ENVIRONMENTS=oracle pyronaut dev` startup opened an Oracle connection, applied all 17 migrations, and served health, vet JSON, care-record JSON and the priority page with HTTP 200. `pyronaut run dev` passes an application argument; this SDK starts Test Resources for `dev`/`test`, while `run` requires an existing database connection.
+
+Configuration validation is enabled with the single documented Test Resources suppression. Existing cached images were reused. Core sample-data lifecycle parity, model/helper equivalence, concurrent first catalog insertion, interactive browser behavior, packaged execution and remote CI remain outside this checkpoint. No external issues or remote pushes were created.
