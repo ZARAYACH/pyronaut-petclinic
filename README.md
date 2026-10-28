@@ -7,7 +7,7 @@ The [porting issue log](docs/porting-issues.md) records encountered problems, re
 ## What This Sample Shows
 
 - Python controllers, entities, repositories, and services running in a Micronaut application.
-- Environment-selected Micronaut Data JDBC repositories for H2, Oracle, PostgreSQL and MySQL.
+- Dialect-selected Micronaut Data JDBC repositories for H2, Oracle, PostgreSQL and MySQL.
 - Spatial clinic searches on all four databases: radius, polygon containment, service-area intersection, and Boolean availability filters.
 - Clinic-specific service catalogs with generated composite-key `@Upsert` and exact decimal prices.
 - Visit duration and follow-up intervals with inclusive database search filters.
@@ -90,11 +90,11 @@ The application starts with H2 on the default Micronaut port, usually `http://lo
 MICRONAUT_ENVIRONMENTS=oracle pyronaut dev
 ```
 
-Shared `application.toml` contains no datasource settings. H2 connection and migration settings live in `application-h2.toml`; a small Micronaut context configurer loads that fallback only when no database profile is active, including ordinary `dev` and `test` startup. Explicit database profiles load their own configuration without inheriting H2 values. Test Resources resolves external connection details; an existing server can be configured through `DATASOURCES_DEFAULT_URL`, `DATASOURCES_DEFAULT_USERNAME` and `DATASOURCES_DEFAULT_PASSWORD`.
+Shared `application.toml` contains no datasource settings. H2 connection and migration settings live in `application-h2.toml`; a small Micronaut context configurer loads that fallback only when no datasource dialect is configured, including ordinary `dev` and `test` startup. Explicit database profiles load their own configuration without inheriting H2 values. Test Resources resolves external connection details; an existing server can be configured through `DATASOURCES_DEFAULT_URL`, `DATASOURCES_DEFAULT_USERNAME` and `DATASOURCES_DEFAULT_PASSWORD`.
 
 `pyronaut dev` starts Test Resources for development. `pyronaut run` launches the processed application without starting Test Resources; external database profiles need an existing database and its connection settings. The default H2 configuration remains in memory. `pyronaut run dev` passes `dev` as an application argument rather than selecting development mode.
 
-The visits search, knowledge, priority and care-record routes below are enabled only in the `oracle` environment, matching the reference. Ordinary visit creation and history are shared by all profiles.
+The visits search, knowledge, priority and care-record routes below are enabled when `datasources.default.dialect` is `ORACLE`, normally selected through the `oracle` profile. Ordinary visit creation and history are shared by all profiles.
 
 Useful routes:
 
@@ -135,7 +135,7 @@ Use a GraalPy environment matching the installed Pyronaut SDK for pytest. An ord
 
 ## Database
 
-H2 is the default in-memory database, matching the reference. All profiles use Hikari. Each has its own repository beans and migration location; existing Oracle migration history remains intact.
+H2 is the default in-memory database, matching the reference. All profiles use Hikari. Each dialect selects its repository beans; profiles provide the matching connection and migration settings; existing Oracle migration history remains intact.
 
 | Environment | Configuration | Development/test database |
 | --- | --- | --- |
@@ -150,7 +150,7 @@ MySQL Test Resources enables creation of the deterministic ETag routine in its l
 
 The regular Oracle image includes spatial types; the slim image cannot run that feature. PostgreSQL uses PostGIS for the same spatial operations. CI runs the four database profiles through `pyronaut test`; Test Resources/Testcontainers provisions and cleans up the databases using the image settings in each profile. H2 runs in memory. Local verification uses the existing cached images.
 
-The migrations provide visit intervals, 20 clinic branches, 62 service offerings and appointment fixtures. Oracle additionally has native interval/vector storage and the owner-care duality view; its startup loader reads the reference's 10 knowledge documents and 20 chunks. Oracle Deep Data Security is deferred. Fixture lifecycle differences and remaining parity checks are tracked in the issue log.
+The migrations provide visit intervals, 20 clinic branches, 62 service offerings and appointment fixtures. Oracle additionally has native interval/vector storage and the owner-care duality view; its startup loader reads the reference's 10 knowledge documents and 20 chunks. Fixture lifecycle differences and remaining parity checks are tracked in the issue log.
 
 Run SDK commands from the project root so Test Resources can copy the Oracle priority setup script from `config/oracle/01-priority.sql`. The booking pause defaults to 15 seconds, matching the reference.
 
