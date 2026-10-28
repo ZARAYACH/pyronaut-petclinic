@@ -1,10 +1,10 @@
 # PetClinic port: open issues and retained workarounds
 
-Updated: 2026-10-28 (ownership triage and SDK follow-up). Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
+Updated: 2026-10-28 (ownership triage and SDK follow-up). Scope: a faithful Micronaut PetClinic port to Pyronaut.
 
 This is a working log for filing issues later. No external issues have been created. It retains open issues, framework improvements, unresolved investigations and active workarounds. Local environment/provisioning issues and fully resolved entries needing no workaround are excluded. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
-**Latest scope:** check the updated local Java reference, organize repositories/services/controllers/models/DTOs by functionality, verify SDK 0.1.1 compatibility, and isolate datasource profiles. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
+**Latest scope:** check the updated local Java reference, organize repositories/services/controllers/models/DTOs by functionality, verify SDK 0.1.1 compatibility, isolate datasource profiles, and select database beans by datasource dialect. The earlier stabilization backlog remains deferred except for the corrections recorded below.
 
 ## Reproduction versions and configuration
 
@@ -20,17 +20,17 @@ Record a reduced reproduction and reconfirm it before opening an upstream issue.
 
 ## Ownership triage (2026-10-28)
 
-All **28 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
+All **29 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
 
 | Primary classification | Entries | Meaning |
 | --- | ---: | --- |
-| Framework candidate | 13 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
+| Framework candidate | 14 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
 | Framework improvement | 5 | Interop documentation, diagnostics or capability configuration; no correctness defect established |
 | Application/test | 3 | Open application work or implementation choices still needing verification/workarounds |
 | Reference application | 3 | Java sample behavior or schema; not automatically a Pyronaut issue |
 | Unresolved | 4 | Evidence does not yet distinguish application setup from a library/runtime defect |
 
-Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 13 framework candidates, **12 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 12 proven Pyronaut defects.
+Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 14 framework candidates, **13 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 13 proven Pyronaut defects.
 
 ### Complete disposition
 
@@ -64,6 +64,7 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-046 | Framework candidate | **Micronaut Data ETag SQL generation.** Unquoted mapped identifiers break PostgreSQL. Generated lowercase aliases are our workaround; prove the Java control before describing this as Pyronaut-specific. PostgreSQL identifier folding is expected. |
 | PORT-051 | Framework candidate | **Embedded pytest capture on SDK 0.1.1.** Default file-descriptor capture aborts pytest before cases run. Python stream capture permits execution; retain `--capture=sys` in pytest configuration and reduce the runner/filesystem interaction. |
 | PORT-052 | Framework candidate | **Python exception mirrors across service boundaries.** An already-taken booking becomes a Java exception mirror; checking the Python exception type raises an interop attribute error. Detect its generated Java type first while preserving the HTTP 409 outcome. |
+| PORT-053 | Framework candidate | **Pyronaut pytest application-configurer discovery.** The fixture builder selects its application classloader after the base builder has loaded configurers. A project `@ContextConfigurer` is missed; explicitly select the H2 test profile and exercise default startup through an application-classloader builder. |
 
 ### Framework defect investigation queue
 
@@ -84,6 +85,7 @@ Priorities below reflect potential impact without our workarounds, not current f
 | 11 | PORT-022 — Pyronaut HTTP conversion / Core | Tentative ownership: lowercase binding fails | One enum query route, Python and Java equivalents. Compare uppercase, lowercase, missing and invalid values plus converter registration. Supported lowercase values must bind; invalid values must produce the agreed client-error response. Isolate conversion from our generic HTML handler. |
 | 12 | PORT-051 — Pyronaut embedded pytest / GraalPy filesystem | Strong: unchanged suite fails before execution; stream-capture control passes | One assertion-only test under default capture and `--capture=sys`, with SDK 0.1.1 and matching GraalPy. Preserve the original exception and identify the missing capture path. The default runner must execute ordinary tests or select supported capture automatically. |
 | 13 | PORT-052 — Pyronaut exception interop | Strong: real taken-booking response fails; Java-type control passes | Raise a Python custom exception from an intercepted service and catch it in a separate controller module. Compare Java/Python type checks on the received mirror. Normal exception classification must not raise a missing internal-attribute error. |
+| 14 | PORT-053 — Pyronaut pytest context builder | Strong mechanism: builder bytecode and missing default datasource agree; reduced control still required | One project `@ContextConfigurer` supplying a sentinel property. Compare the pytest fixture with `ApplicationContext.builder(applicationClassLoader)`. The fixture must discover the project configurer before context configuration. |
 
 File one issue per independently reproducible cause. PORT-035 and PORT-039 are related metadata areas but exhibit distinct compilation and query-specialization failures. Validation-path formatting (PORT-015) and repository/enum mirror handling (PORT-021) are interop improvement requests, not extra constraint or persistence bugs. PORT-027 concerns validation of the correct runtime configuration shape.
 
@@ -317,7 +319,7 @@ These items are documented proposals, not implemented additions or current stabi
 | Distribution and production configuration | Exercise packaged startup away from the repository root, resource/static loading and external datasource overrides/fallbacks; review management endpoints against the reference | Packaged routes/assets/resources work; configured database connections resolve correctly; intended health/security behavior matches the source |
 | CI verification | Review SDK configuration validation and execute the configured four-profile remote CI matrix | Explicit validation result; successful remote jobs with honest skip counts |
 
-Keep the source reference checkout and the user's existing CPython environment unchanged. Continue using already cached images locally. Oracle Deep Data Security is outside this backlog's implementation scope unless separately requested.
+Keep the source reference checkout and the user's existing CPython environment unchanged. Continue using already cached images locally.
 
 ## Other verification notes
 
@@ -369,20 +371,28 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 - **Workaround (focused HTTP check and full Oracle suite passed):** Recognize `java.type('petclinic.models.BookingTaken')` before checking the Python `BookingTaken` class. Keep native Python classification for local exceptions. The original end-to-end booking/taken/reset test then passes without changing service transactions or response expectations.
 - **Issue disposition:** Generated exception-mirror/inter-context integration candidate. Reduce across two small modules before assigning the exact framework owner; this was observed with the new package boundaries, not proven to affect every custom exception or older SDK release.
 
+### PORT-053 — Pytest fixture misses the application context configurer
+
+- **Classification:** Framework candidate; Pyronaut pytest context-builder/classloader integration.
+- **Observed on SDK 0.1.1:** With only the `test` environment, the fixture has neither the default dialect nor a datasource. The application configurer runs during CLI configuration validation but is not invoked for the pytest application context. The new dialect-based repository conditions expose the missing default explicitly.
+- **Mechanism evidence:** Installed `PytestMicronautExtension$PytestApplicationContextBuilder` bytecode calls the no-argument base-builder constructor before `configureApplicationClassLoader`. Core loads `ApplicationContextConfigurer` implementations in that base constructor, using the earlier classloader. Configuring the classloader afterward does not reload them. Preserve a reduced sentinel-property comparison before filing upstream.
+- **Workaround:** Select `environments=["test", DATABASE]` for all HTTP/database matrix runs, including H2. Check the profile-free H2 fallback separately with `ApplicationContext.builder(applicationClassLoader)`; do not restore environment-based repository conditions.
+- **Evidence:** The initial full H2 run failed 85 of 106 executed cases; its profile check had no configured dialect and no datasource. Reports are retained under `__pyronaut__/reports/dialect-selection-20261028/initial/`. Focused failure logs and inspected SDK builder bytecode are retained locally in `/private/tmp/pyronaut-dialect-fallback-debug.log` and `/private/tmp/pyronaut-pytest-extension-bytecode.txt`.
+
 ## Latest verification checkpoint
 
-The final **2026-10-28** runs collected 121 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. After the additional DTO/model package split, all four profiles were rerun with the same passing counts. The latest reports, CLI logs and source-content manifest are retained locally under `__pyronaut__/reports/models-dtos-20261028/final/`; the preceding layer/profile checks remain under `__pyronaut__/reports/refactor-20261028/`.
+The final **2026-10-28** runs collected 127 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. After the package split and dialect-based bean selection, all four profiles were rerun. The latest reports, CLI logs and source-content manifest are retained locally under `__pyronaut__/reports/dialect-selection-20261028/final/`; the preceding package/profile checks remain under `__pyronaut__/reports/models-dtos-20261028/final/` and `__pyronaut__/reports/refactor-20261028/`.
 
 | Profile | Passed | Expected skips |
 | --- | ---: | ---: |
-| H2 | 101 | 20 Oracle-only cases |
-| Oracle | 120 | 1 H2-only case |
-| PostgreSQL | 100 | 20 Oracle-only and 1 H2-only case |
-| MySQL | 100 | 20 Oracle-only and 1 H2-only case |
+| H2 | 107 | 20 Oracle-only cases |
+| Oracle | 126 | 1 H2-only case |
+| PostgreSQL | 106 | 20 Oracle-only and 1 H2-only case |
+| MySQL | 106 | 20 Oracle-only and 1 H2-only case |
 
 The existing local Java reference advanced from `0ad5747` to `f0e444e`. Its seven changed files contain dependency/build updates only: no application code, tests, templates or resources changed. Maven/Gradle parent settings, Java native-build metadata and the Java CI GraalVM action are not copied into the SDK-managed Python build. This check validates the port on the installed SDK stack; dependency versions are not claimed to be identical to the Java build.
 
-Repositories, services, controllers, domain/persistence models and request/response DTOs are now separate namespace packages organized by functionality. All 103 Python classes retain their fields, annotations and method bodies; imports and explicit Java mirror lookups follow the new packages. Explicit concrete query declarations, generated CRUD/ETag predicates, singleton service scopes and transaction annotations remain intact. The profile check asserts both the live database product and JDBC URL. H2 settings live in a separate configuration file and are loaded only as a fallback when no database profile is selected; external profiles contain no inherited H2 connection settings.
+Repositories, services, controllers, domain/persistence models and request/response DTOs are now separate namespace packages organized by functionality. The package split preserved all 103 Python classes and their domain fields and method bodies; imports and explicit Java mirror lookups follow the new packages. Conditional repository, service and controller annotations now use shared constants for `datasources.default.dialect`; Oracle navigation uses that same property. Explicit concrete query declarations, generated CRUD/ETag predicates, singleton service scopes and transaction annotations remain intact. The profile check asserts both the live database product and JDBC URL. H2 settings live in a separate configuration file and are loaded only as a fallback when no datasource dialect is configured; external profiles contain no inherited H2 connection settings. Six bean-selection checks per run verify the profile-free H2 fallback, explicit H2/MySQL/Oracle/PostgreSQL dialects under custom profiles, and an Oracle profile overridden by an H2 dialect. Flat, nested and environment-style property sources are covered. The HTTP fixture selects H2 explicitly because of PORT-053.
 
 A plain `pyronaut dev` startup with no database environment used H2, served health/vets/clinics, and kept Oracle-only care records unavailable (404). A real `MICRONAUT_ENVIRONMENTS=oracle pyronaut dev` startup opened an Oracle connection, applied all 17 migrations, and served health, vet JSON, care-record JSON and the priority page with HTTP 200. `pyronaut run dev` passes an application argument; this SDK starts Test Resources for `dev`/`test`, while `run` requires an existing database connection.
 
