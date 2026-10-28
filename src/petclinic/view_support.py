@@ -13,8 +13,8 @@ from micronaut.http.server.util.locale import HttpLocaleResolver
 from micronaut.views import ModelAndView
 from micronaut.views.model import ViewModelProcessor
 
-from .resources import ApplicationResources
 from .constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+from .resources import ApplicationResources
 
 
 @Factory
@@ -41,4 +41,5 @@ class ViewSupport:
             model.setdefault("oracleEnabled", self.environment.getProperty(
                 DEFAULT_DIALECT_PROPERTY, String).orElse('') == DIALECT_ORACLE)
             modelAndView.setModel(model)
+
         return process

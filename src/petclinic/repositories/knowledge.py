@@ -1,14 +1,14 @@
 """Knowledge repository contracts and database-specific implementations."""
 
-from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
-
 from typing import Protocol
+
 from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
 from micronaut.data.model.vector import Vector
 from micronaut.data.model.vector.search import Score, ScoringFunction, SearchResults
 from micronaut.data.repository import CrudRepository
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
 from petclinic.models.knowledge import PetCareDocument, PetCareChunk
 
 

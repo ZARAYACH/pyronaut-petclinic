@@ -1,26 +1,22 @@
 """Visits HTTP routes and helpers."""
 
 from typing import Annotated
+
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from micronaut.http import HttpResponse, MediaType
-from micronaut.http.server.exceptions import NotFoundException
 from micronaut.http.annotation import Body, Get, Post
+from micronaut.http.server.exceptions import NotFoundException
 from micronaut.views import View
+from petclinic.controllers.support import redirect_to, visit_errors, persist_visit
 from petclinic.dtos.patients import VisitForm, VisitRequest
+from petclinic.errors import entity_not_found
 from petclinic.mapper import FormMapper
 from petclinic.services.clinic import ClinicService
 from petclinic.services.view_models import pet_view_model
-from petclinic.errors import entity_not_found
-from petclinic.controllers.support import redirect_to, visit_errors, persist_visit
-
 
 clinic_service: Annotated[ClinicService, Inject]
-
-
 form_mapper: Annotated[FormMapper, Inject]
-
-
 validator: Annotated[Validator, Inject]
 
 
@@ -39,7 +35,8 @@ def process_visit_creation_json(ownerId: int, petId: int, request: Annotated[Vis
     if pet is None:
         return entity_not_found()
     form = VisitForm(date=request.date, description=request.description,
-                     durationMinutes=str(request.durationMinutes), followUpPeriodMonths=str(request.followUpPeriodMonths))
+                     durationMinutes=str(request.durationMinutes),
+                     followUpPeriodMonths=str(request.followUpPeriodMonths))
     errors = visit_errors(form, validator)
     if errors:
         return HttpResponse.badRequest({"message": "Validation failed", "errors": errors})

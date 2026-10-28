@@ -14,9 +14,8 @@ from abc import ABC, abstractmethod
 
 from jakarta.inject import Singleton
 from micronaut.context.annotation import Mapper
-
-from petclinic.models.patients import Owner, Pet, PetType, Visit
 from petclinic.dtos.patients import OwnerForm, PetForm, VisitForm
+from petclinic.models.patients import Owner, Pet, PetType, Visit
 
 
 @Singleton

@@ -1,10 +1,10 @@
 """Care records application services."""
 
-from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
-
 from typing import Annotated
+
 from jakarta.inject import Inject, Singleton
 from micronaut.context.annotation import Requires
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
 from petclinic.models.care_records import OwnerCareView
 from petclinic.repositories.care_records import OwnerCareViewRepository
 

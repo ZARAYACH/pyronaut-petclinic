@@ -1,15 +1,15 @@
 """Visit search HTTP handling."""
 
-from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
-
 from datetime import date
 from typing import Annotated
+
 from jakarta.inject import Inject
-from micronaut.context.annotation import Requires
 from java.time import LocalDate
+from micronaut.context.annotation import Requires
 from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Controller, Get, Produces, QueryValue
 from micronaut.views import View
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
 from petclinic.services.clinic import ClinicService
 
 
@@ -18,21 +18,19 @@ from petclinic.services.clinic import ClinicService
 class VisitSearchController:
     clinic_service: Annotated[ClinicService, Inject]
 
-
     @Get
     @View("visits/searchVisits")
     def visit_search_page(self) -> dict:
         return {"year": date.today().year}
 
-
     @Get("/search")
     @Produces(MediaType.APPLICATION_JSON)
     def search_visits(
-        self,
-        fromDate: Annotated[str, QueryValue],
-        toDate: Annotated[str, QueryValue],
-        maxDurationMinutes: Annotated[int, QueryValue(defaultValue="120")] = 120,
-        maxFollowUpMonths: Annotated[int, QueryValue(defaultValue="12")] = 12,
+            self,
+            fromDate: Annotated[str, QueryValue],
+            toDate: Annotated[str, QueryValue],
+            maxDurationMinutes: Annotated[int, QueryValue(defaultValue="120")] = 120,
+            maxFollowUpMonths: Annotated[int, QueryValue(defaultValue="12")] = 12,
     ):
         try:
             start = date.fromisoformat(fromDate)
@@ -40,4 +38,4 @@ class VisitSearchController:
         except ValueError:
             return HttpResponse.badRequest({"message": "Dates must be valid ISO dates (YYYY-MM-DD)."})
         return self.clinic_service.search_visits(LocalDate.parse(start.isoformat()), LocalDate.parse(end.isoformat()),
-                                            maxDurationMinutes, maxFollowUpMonths)
+                                                 maxDurationMinutes, maxFollowUpMonths)

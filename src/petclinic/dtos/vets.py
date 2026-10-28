@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import Annotated
+
 from jakarta.validation.constraints import NotBlank, Size
 from micronaut.serde.annotation import Serdeable
 

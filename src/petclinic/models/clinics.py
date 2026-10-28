@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import Annotated
+
 from java.math import BigDecimal
 from micronaut.data.annotation import GeneratedValue, Id, Index, MappedEntity, MappedProperty, Relation, Srid
 from micronaut.data.model.geo import Point, Polygon
@@ -18,7 +19,9 @@ class Clinic:
     location: Annotated[Point, Srid(value=4326, type=Srid.CrsType.GEOGRAPHIC), MappedProperty("LOCATION")]
     serviceArea: Annotated[Polygon, Srid(value=4326, type=Srid.CrsType.GEOGRAPHIC), MappedProperty("SERVICE_AREA")]
     id: Annotated[int | None, Id, GeneratedValue] = None
-    serviceOfferings: Annotated[list["ClinicServiceOffering"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="clinic")] = field(default_factory=list)
+    serviceOfferings: Annotated[
+        list["ClinicServiceOffering"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="clinic")] = field(
+        default_factory=list)
 
 
 @Index(name="UK_CLINIC_SERVICE_CODE", columns=["CLINIC_ID", "SERVICE_CODE"], unique=True)

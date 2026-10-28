@@ -1,26 +1,22 @@
 """Owners HTTP routes and helpers."""
 
 from typing import Annotated
+
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from micronaut.http import HttpResponse, MediaType
-from micronaut.http.server.exceptions import NotFoundException
 from micronaut.http.annotation import Body, Get, Post, QueryValue
+from micronaut.http.server.exceptions import NotFoundException
 from micronaut.views import View
+from petclinic.controllers.support import redirect_to, validation_errors
 from petclinic.dtos.patients import OwnerForm
+from petclinic.errors import entity_not_found
 from petclinic.mapper import FormMapper
 from petclinic.services.clinic import ClinicService
 from petclinic.services.view_models import owner_search_model, owner_view_model
-from petclinic.errors import entity_not_found
-from petclinic.controllers.support import redirect_to, validation_errors
-
 
 clinic_service: Annotated[ClinicService, Inject]
-
-
 form_mapper: Annotated[FormMapper, Inject]
-
-
 validator: Annotated[Validator, Inject]
 
 

@@ -2,8 +2,9 @@
 
 from dataclasses import dataclass, field
 from typing import Annotated
-from java.time import Duration, LocalDate, Period
+
 from jakarta.validation.constraints import Digits, NotBlank, NotNull
+from java.time import Duration, LocalDate, Period
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Relation
 from micronaut.serde.annotation import Serdeable
 
@@ -34,7 +35,8 @@ class Owner:
     city: Annotated[str, NotBlank, MappedProperty("CITY")]
     telephone: Annotated[str | None, Digits(integer=10, fraction=0), MappedProperty("TELEPHONE")]
     id: Annotated[int | None, Id, GeneratedValue] = None
-    pets: Annotated[list["Pet"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="owner")] = field(default_factory=list)
+    pets: Annotated[list["Pet"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="owner")] = field(
+        default_factory=list)
 
     def is_new(self) -> bool:
         return self.id is None
@@ -56,7 +58,8 @@ class Pet:
     type: Annotated[PetType | None, NotNull, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("TYPE_ID")]
     owner: Annotated[Owner | None, Relation(Relation.Kind.MANY_TO_ONE), MappedProperty("OWNER_ID")]
     id: Annotated[int | None, Id, GeneratedValue] = None
-    visits: Annotated[list["Visit"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="pet")] = field(default_factory=list)
+    visits: Annotated[list["Visit"], Relation(value=Relation.Kind.ONE_TO_MANY, mappedBy="pet")] = field(
+        default_factory=list)
 
     def is_new(self) -> bool:
         return self.id is None

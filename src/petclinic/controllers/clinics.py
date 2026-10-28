@@ -3,22 +3,22 @@
 from decimal import Decimal
 from math import isfinite
 from typing import Annotated
+
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from micronaut.data.model.geo import LineString, Point, Polygon
 from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Body, Get, Post
-from micronaut.views import View
 from micronaut.http.server.exceptions import NotFoundException
-from petclinic.validation import violation_field
+from micronaut.views import View
+from petclinic.dtos.clinics import ClinicNearbyRequest, ClinicCoordinatesRequest, ClinicServiceOfferingForm, \
+    ClinicServiceOfferingResponse
 from petclinic.errors import entity_not_found
 from petclinic.models.clinics import Clinic, ClinicServiceOffering
-from petclinic.dtos.clinics import ClinicNearbyRequest, ClinicCoordinatesRequest, ClinicServiceOfferingForm, ClinicServiceOfferingResponse
 from petclinic.services.clinics import ClinicBranchService
-
+from petclinic.validation import violation_field
 
 branch_service: Annotated[ClinicBranchService, Inject]
-
 
 validator: Annotated[Validator, Inject]
 
@@ -31,7 +31,8 @@ def _clinic_model(clinic: Clinic) -> dict:
 
 def _offering_model(offering: ClinicServiceOffering) -> dict:
     return {"id": offering.id, "serviceCode": offering.serviceCode, "name": offering.name,
-            "description": offering.description or "", "price": format(Decimal(str(offering.price)), ".2f"), "durationMinutes": offering.durationMinutes}
+            "description": offering.description or "", "price": format(Decimal(str(offering.price)), ".2f"),
+            "durationMinutes": offering.durationMinutes}
 
 
 def _coordinate(longitude: float, latitude: float) -> Point:
@@ -51,12 +52,15 @@ def _cross(a, b, c):
 
 
 def _on_segment(a, b, p):
-    return min(a.x(), b.x()) - 1e-10 <= p.x() <= max(a.x(), b.x()) + 1e-10 and min(a.y(), b.y()) - 1e-10 <= p.y() <= max(a.y(), b.y()) + 1e-10
+    return min(a.x(), b.x()) - 1e-10 <= p.x() <= max(a.x(), b.x()) + 1e-10 and min(a.y(),
+                                                                                   b.y()) - 1e-10 <= p.y() <= max(a.y(),
+                                                                                                                  b.y()) + 1e-10
 
 
 def _intersects(a, b, c, d):
     x1, x2, x3, x4 = _cross(a, b, c), _cross(a, b, d), _cross(c, d, a), _cross(c, d, b)
-    if ((x1 > 1e-10 and x2 < -1e-10) or (x1 < -1e-10 and x2 > 1e-10)) and ((x3 > 1e-10 and x4 < -1e-10) or (x3 < -1e-10 and x4 > 1e-10)):
+    if ((x1 > 1e-10 and x2 < -1e-10) or (x1 < -1e-10 and x2 > 1e-10)) and (
+            (x3 > 1e-10 and x4 < -1e-10) or (x3 < -1e-10 and x4 > 1e-10)):
         return True
     return any(abs(cross) <= 1e-10 and _on_segment(start, end, point) for cross, start, end, point in (
         (x1, a, b, c), (x2, a, b, d), (x3, c, d, a), (x4, c, d, b)))
@@ -98,7 +102,8 @@ def nearby(request: Annotated[ClinicNearbyRequest, Body]):
     except ValueError as error:
         return HttpResponse.badRequest({"message": str(error)})
     matches = branch_service.clinics.findByLocationNear(point, request.radiusMeters)
-    return [_clinic_model(c) for c in branch_service.filter_availability(matches, request.acceptingNewPatients, request.emergencyService)]
+    return [_clinic_model(c) for c in
+            branch_service.filter_availability(matches, request.acceptingNewPatients, request.emergencyService)]
 
 
 @Post(value="/clinics/within", consumes=MediaType.APPLICATION_JSON)
@@ -108,7 +113,8 @@ def within(request: Annotated[ClinicCoordinatesRequest, Body]):
     except ValueError as error:
         return HttpResponse.badRequest({"message": str(error)})
     matches = branch_service.clinics.findByLocationGeoWithin(polygon)
-    return [_clinic_model(c) for c in branch_service.filter_availability(matches, request.acceptingNewPatients, request.emergencyService)]
+    return [_clinic_model(c) for c in
+            branch_service.filter_availability(matches, request.acceptingNewPatients, request.emergencyService)]
 
 
 @Post(value="/clinics/intersects", consumes=MediaType.APPLICATION_JSON)
@@ -118,7 +124,8 @@ def intersects(request: Annotated[ClinicCoordinatesRequest, Body]):
     except ValueError as error:
         return HttpResponse.badRequest({"message": str(error)})
     matches = branch_service.clinics.findByServiceAreaGeoIntersects(line)
-    return [_clinic_model(c) for c in branch_service.filter_availability(matches, request.acceptingNewPatients, request.emergencyService)]
+    return [_clinic_model(c) for c in
+            branch_service.filter_availability(matches, request.acceptingNewPatients, request.emergencyService)]
 
 
 @Get("/clinics/{clinicId}/services")
@@ -127,7 +134,9 @@ def clinic_services(clinicId: int):
     clinic = branch_service.clinics.findOneById(clinicId)
     if clinic is None:
         raise NotFoundException()
-    return {"clinic": _clinic_model(clinic), "services": [_offering_model(o) for o in branch_service.offerings.findByClinicIdOrderByServiceCode(clinicId)]}
+    return {"clinic": _clinic_model(clinic), "services": [_offering_model(o) for o in
+                                                          branch_service.offerings.findByClinicIdOrderByServiceCode(
+                                                              clinicId)]}
 
 
 @Get("/clinics/{clinicId}/services/new")
@@ -136,7 +145,8 @@ def new_service(clinicId: int):
     clinic = branch_service.clinics.findOneById(clinicId)
     if clinic is None:
         raise NotFoundException()
-    return {"clinic": _clinic_model(clinic), "service": {"price": "0.00", "durationMinutes": 30}, "isNew": True, "validationErrors": {}}
+    return {"clinic": _clinic_model(clinic), "service": {"price": "0.00", "durationMinutes": 30}, "isNew": True,
+            "validationErrors": {}}
 
 
 @Get("/clinics/{clinicId}/services/{serviceCode}/edit")
@@ -145,7 +155,8 @@ def edit_service(clinicId: int, serviceCode: str):
     offering = branch_service.offerings.findByClinicIdAndServiceCode(clinicId, serviceCode)
     if offering is None:
         raise NotFoundException()
-    return {"clinic": _clinic_model(offering.clinic), "service": _offering_model(offering), "isNew": False, "validationErrors": {}}
+    return {"clinic": _clinic_model(offering.clinic), "service": _offering_model(offering), "isNew": False,
+            "validationErrors": {}}
 
 
 @Post(value="/clinics/{clinicId}/services", consumes=MediaType.APPLICATION_JSON)
@@ -158,4 +169,5 @@ def save_service(clinicId: int, form: Annotated[ClinicServiceOfferingForm, Body]
         return HttpResponse.badRequest({"message": "Validation failed", "errors": errors})
     offering = branch_service.upsert_offering(clinic, form)
     return ClinicServiceOfferingResponse(id=offering.id, clinicId=clinicId, serviceCode=offering.serviceCode,
-        name=offering.name, description=offering.description, price=offering.price, durationMinutes=offering.durationMinutes)
+                                         name=offering.name, description=offering.description, price=offering.price,
+                                         durationMinutes=offering.durationMinutes)

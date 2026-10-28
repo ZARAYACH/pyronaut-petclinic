@@ -1,10 +1,11 @@
 """Locale HTTP routes and helpers."""
 
 from typing import Annotated
+
 from java.time import Duration
 from micronaut.http import HttpRequest
-from micronaut.http.cookie import Cookie
 from micronaut.http.annotation import Get, QueryValue
+from micronaut.http.cookie import Cookie
 from petclinic.controllers.support import redirect_to
 
 

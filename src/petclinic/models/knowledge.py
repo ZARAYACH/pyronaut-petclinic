@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Annotated
+
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, VectorStorage
 from micronaut.data.model.vector import FloatVector
 

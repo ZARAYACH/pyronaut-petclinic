@@ -1,14 +1,14 @@
 """Embeddings application services."""
 
-from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
-
 import base64
 import struct
 from functools import lru_cache
 from typing import Annotated
+
 from jakarta.inject import Inject, Singleton
 from micronaut.context.annotation import Requires
 from micronaut.data.model.vector import FloatVector
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
 from petclinic.resources import ApplicationResources
 
 
@@ -37,7 +37,8 @@ class StaticPetCareEmbeddingService:
     resources: Annotated[ApplicationResources, Inject]
 
     def find(self, text: str) -> FloatVector | None:
-        values = vector_catalog(self.resources.text('knowledge/pet-care-embeddings.tsv')).get(text.strip()) if text and text.strip() else None
+        values = vector_catalog(self.resources.text('knowledge/pet-care-embeddings.tsv')).get(
+            text.strip()) if text and text.strip() else None
         return FloatVector(list(values)) if values is not None else None
 
     def embed(self, text: str) -> FloatVector:

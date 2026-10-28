@@ -23,7 +23,8 @@ def pet_view_model(pet: Pet) -> dict:
         'id': pet.id, 'name': pet.name, 'birthDate': str(pet.birthDate or ''),
         'type': {'name': pet_type} if pet.type is not None else None,
         'typeClass': pet_type.strip().lower() or 'dog',
-        'icon': {'cat': 'fa-cat', 'bird': 'fa-dove', 'hamster': 'fa-hippo', 'snake': 'fa-worm'}.get(pet_type.strip().lower(), 'fa-dog'),
+        'icon': {'cat': 'fa-cat', 'bird': 'fa-dove', 'hamster': 'fa-hippo', 'snake': 'fa-worm'}.get(
+            pet_type.strip().lower(), 'fa-dog'),
         'visits': [{'id': v.id, 'date': str(v.date or ''), 'description': v.description,
                     'durationInMinutes': duration_minutes(v.duration) if v.duration is not None else None,
                     'periodInMonths': v.period.toTotalMonths() if v.period is not None else None}

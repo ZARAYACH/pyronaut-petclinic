@@ -1,24 +1,22 @@
 """Pets HTTP routes and helpers."""
 
 from typing import Annotated
+
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from micronaut.http import HttpResponse, MediaType
-from micronaut.http.server.exceptions import NotFoundException
 from micronaut.http.annotation import Body, Get, Post
+from micronaut.http.server.exceptions import NotFoundException
 from micronaut.views import View
+from petclinic.controllers.support import redirect_to, validation_errors, pet_type_for, parse_form_date
 from petclinic.dtos.patients import PetForm
+from petclinic.errors import entity_not_found
 from petclinic.mapper import FormMapper
 from petclinic.services.clinic import ClinicService
-from petclinic.errors import entity_not_found
-from petclinic.controllers.support import redirect_to, validation_errors, pet_type_for, parse_form_date
-
 
 clinic_service: Annotated[ClinicService, Inject]
 
-
 form_mapper: Annotated[FormMapper, Inject]
-
 
 validator: Annotated[Validator, Inject]
 
@@ -29,7 +27,8 @@ def init_pet_creation_form(ownerId: int) -> dict:
     owner = clinic_service.find_owner_by_id(ownerId)
     if owner is None or owner.id != ownerId:
         raise NotFoundException()
-    return {"pet": PetForm(), "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": {}}
+    return {"pet": PetForm(), "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True,
+            "validationErrors": {}}
 
 
 @Post(value="/owners/{ownerId}/pets/new", consumes=MediaType.APPLICATION_FORM_URLENCODED)
@@ -47,7 +46,8 @@ def process_pet_creation_form(ownerId: int, form: Annotated[PetForm, Body]):
     errors = validation_errors(form, validator)
     pet_type = pet_type_for(form, errors, clinic_service)
     if errors:
-        return {"pet": form, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True, "validationErrors": errors}
+        return {"pet": form, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": True,
+                "validationErrors": errors}
     if pet_type is None:
         return HttpResponse.badRequest("Invalid pet type")
     form.birthDateValue = parse_form_date(form.birthDate)
@@ -63,7 +63,8 @@ def init_pet_update_form(ownerId: int, petId: int) -> dict:
     if pet is None:
         raise NotFoundException()
     owner = pet.owner or clinic_service.find_owner_by_id(ownerId)
-    return {"pet": form_mapper.to_pet_form(pet), "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": {}}
+    return {"pet": form_mapper.to_pet_form(pet), "petId": petId, "owner": owner,
+            "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": {}}
 
 
 @Post(value="/owners/{ownerId}/pets/{petId}/edit", consumes=MediaType.APPLICATION_FORM_URLENCODED)
@@ -77,7 +78,8 @@ def process_pet_update_form(ownerId: int, petId: int, form: Annotated[PetForm, B
     pet_type = pet_type_for(form, errors, clinic_service)
     if errors:
         form.id = petId
-        return {"pet": form, "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False, "validationErrors": errors}
+        return {"pet": form, "petId": petId, "owner": owner, "types": clinic_service.find_pet_types(), "isNew": False,
+                "validationErrors": errors}
     if pet_type is None:
         return HttpResponse.badRequest("Invalid pet type")
     form.birthDateValue = parse_form_date(form.birthDate)

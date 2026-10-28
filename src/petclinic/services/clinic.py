@@ -1,9 +1,10 @@
 """Shared PetClinic service facade and veterinarian aggregate decoding."""
 
 from typing import Annotated
-from java.time import Duration, LocalDate, Period
+
 from jakarta.inject import Inject, Singleton
 from jakarta.transaction import Transactional
+from java.time import Duration, LocalDate, Period
 from micronaut.cache.annotation import Cacheable
 from petclinic.models.patients import Owner, Pet, PetType, Visit
 from petclinic.models.vets import Speciality, Vet
@@ -78,9 +79,11 @@ class ClinicService:
     def find_visit_by_id(self, visit_id: int) -> Visit | None:
         return self.visit_repository.findOneById(visit_id)
 
-    def search_visits(self, from_date: LocalDate, to_date: LocalDate, max_duration_minutes: int, max_follow_up_months: int) -> list[dict]:
+    def search_visits(self, from_date: LocalDate, to_date: LocalDate, max_duration_minutes: int,
+                      max_follow_up_months: int) -> list[dict]:
         visits = self.visit_repository.findByDateBetweenAndDurationLessThanEqualsAndPeriodLessThanEquals(
-            from_date, to_date, Duration.ofMinutes(max_duration_minutes), Period.ofMonths(max_follow_up_months).normalized()
+            from_date, to_date, Duration.ofMinutes(max_duration_minutes),
+            Period.ofMonths(max_follow_up_months).normalized()
         )
         return [{
             "id": visit.id,
@@ -103,7 +106,8 @@ class ClinicService:
     @Cacheable("vets")
     def find_all_vets(self) -> list[Vet]:
         return [Vet(id=vet.id, firstName=vet.firstName, lastName=vet.lastName,
-                    specialities=[Speciality(id=s['id'], name=s['name']) for s in _parse_speciality_rows(vet.specialityRows)])
+                    specialities=[Speciality(id=s['id'], name=s['name']) for s in
+                                  _parse_speciality_rows(vet.specialityRows)])
                 for vet in self.vet_repository.findAllWithSpecialities()]
 
     @Transactional

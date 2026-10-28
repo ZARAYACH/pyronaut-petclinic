@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Annotated
+
 from jakarta.validation.constraints import NotBlank, NotNull
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty
 from micronaut.serde.annotation import Serdeable

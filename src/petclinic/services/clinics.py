@@ -1,10 +1,11 @@
 """Clinics application services."""
 
 from typing import Annotated
+
 from jakarta.inject import Inject, Singleton
 from jakarta.transaction import Transactional
-from petclinic.models.clinics import Clinic, ClinicServiceOffering
 from petclinic.dtos.clinics import ClinicServiceOfferingForm
+from petclinic.models.clinics import Clinic, ClinicServiceOffering
 from petclinic.repositories.clinics import ClinicRepository, ClinicServiceOfferingRepository
 
 
@@ -13,7 +14,8 @@ class ClinicBranchService:
     clinics: Annotated[ClinicRepository, Inject]
     offerings: Annotated[ClinicServiceOfferingRepository, Inject]
 
-    def filter_availability(self, clinics: list[Clinic], accepting: bool | None, emergency: bool | None) -> list[Clinic]:
+    def filter_availability(self, clinics: list[Clinic], accepting: bool | None, emergency: bool | None) -> list[
+        Clinic]:
         if accepting is None and emergency is None:
             return list(clinics)
         if accepting is not None and emergency is not None:

@@ -2,11 +2,12 @@
 
 from dataclasses import dataclass, field
 from typing import Annotated
+
 from jakarta.validation.constraints import NotBlank
 from micronaut.core.annotation import Creator, Introspected
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Transient
-from micronaut.serde.annotation import Serdeable
 from micronaut.data.annotation.sql import ETaggable, GeneratedETag
+from micronaut.serde.annotation import Serdeable
 from petclinic.etags import EMPTY_SPECIALITIES_HASH
 
 

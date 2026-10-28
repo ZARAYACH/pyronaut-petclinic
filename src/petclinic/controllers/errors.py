@@ -1,16 +1,16 @@
 """Errors HTTP handling."""
 
 import logging
-from java.lang import Throwable
+
 from java.io import PrintWriter, StringWriter
+from java.lang import Throwable
+from micronaut.core.convert.exceptions import ConversionErrorException
 from micronaut.http import HttpRequest, HttpStatus, HttpResponse
 from micronaut.http.annotation import Error
-from micronaut.http.server.exceptions import NotFoundException
-from micronaut.views import View
 from micronaut.http.exceptions import HttpStatusException
-from micronaut.core.convert.exceptions import ConversionErrorException
+from micronaut.http.server.exceptions import NotFoundException
 from micronaut.json import JsonSyntaxException
-
+from micronaut.views import View
 
 LOG = logging.getLogger(__name__)
 

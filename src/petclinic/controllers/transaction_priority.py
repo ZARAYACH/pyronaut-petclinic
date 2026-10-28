@@ -1,10 +1,9 @@
 """Transaction priority HTTP handling."""
 
-from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
-
 import logging
-import java
 from typing import Annotated
+
+import java
 from jakarta.inject import Inject
 from java.lang import RuntimeException
 from micronaut.context.annotation import Requires
@@ -15,11 +14,12 @@ from micronaut.http.exceptions import HttpStatusException
 from micronaut.scheduling.annotation import ExecuteOn
 from micronaut.transaction.exceptions import OracleTransactionPriorityException, TransactionTimedOutException
 from micronaut.views import View
-from petclinic.models.appointments import AppointmentStatus, BookingType, BookingOutcome, BookingTaken, status_name, with_status
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
 from petclinic.dtos.appointments import OracleBookingResult
+from petclinic.models.appointments import AppointmentStatus, BookingType, BookingOutcome, BookingTaken, status_name, \
+    with_status
 from petclinic.repositories.appointments import AppointmentRepository
 from petclinic.services.transaction_priority import OracleTransactionPriorityService
-
 
 LOG = logging.getLogger(__name__)
 
@@ -66,7 +66,8 @@ class OracleTransactionPriorityController:
             self.service.reset_fixture()
         except (RuntimeException, Exception) as error:
             if booking_outcome(error) == BookingOutcome.TIMED_OUT:
-                raise HttpStatusException(HttpStatus.CONFLICT, 'A booking is still running. Wait for it to finish before resetting.')
+                raise HttpStatusException(HttpStatus.CONFLICT,
+                                          'A booking is still running. Wait for it to finish before resetting.')
             raise
         return {'status': 'reset'}
 
@@ -94,8 +95,10 @@ class OracleTransactionPriorityController:
         status = {BookingOutcome.COMMITTED: HttpStatus.OK, BookingOutcome.PRIORITY_ROLLED_BACK: HttpStatus.CONFLICT,
                   BookingOutcome.TAKEN: HttpStatus.CONFLICT, BookingOutcome.TIMED_OUT: HttpStatus.SERVICE_UNAVAILABLE,
                   BookingOutcome.FAILED: HttpStatus.INTERNAL_SERVER_ERROR}[outcome]
-        return HttpResponse.status(status).body(OracleBookingResult(appointmentId, outcome, AppointmentStatus(status_name(booked.status)),
-                                                                    [with_status(a, AppointmentStatus(status_name(a.status))) for a in self.appointments.findAvailableAppointments()]))
+        return HttpResponse.status(status).body(
+            OracleBookingResult(appointmentId, outcome, AppointmentStatus(status_name(booked.status)),
+                                [with_status(a, AppointmentStatus(status_name(a.status))) for a in
+                                 self.appointments.findAvailableAppointments()]))
 
     @Error(exception=HttpStatusException)
     def lab_error(self, request: HttpRequest, error: HttpStatusException):

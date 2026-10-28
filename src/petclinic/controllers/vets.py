@@ -1,6 +1,7 @@
 """Vets HTTP handling."""
 
 from typing import Annotated
+
 from jakarta.inject import Inject
 from jakarta.validation import Validator
 from micronaut.http import HttpResponse, HttpStatus, MediaType
@@ -9,9 +10,9 @@ from micronaut.http.exceptions import HttpStatusException
 from micronaut.http.server.exceptions import NotFoundException
 from micronaut.scheduling.annotation import ExecuteOn
 from micronaut.views import View
-from petclinic.services.view_models import vet_view_models
-from petclinic.services.vets import domain_error, VetService
 from petclinic.dtos.vets import VetForm, SpecialityForm
+from petclinic.services.vets import domain_error, VetService
+from petclinic.services.view_models import vet_view_models
 
 
 def speciality_model(speciality) -> dict:
@@ -106,7 +107,7 @@ class VetController:
     @Get('/specialities/{id}/edit')
     @View('vets/createOrUpdateSpecialityForm')
     def edit_speciality(self, id: int, saved: Annotated[bool, QueryValue(defaultValue='false')] = False,
-                       duplicate: Annotated[bool, QueryValue(defaultValue='false')] = False):
+                        duplicate: Annotated[bool, QueryValue(defaultValue='false')] = False):
         try:
             speciality = self.service.find_speciality(id)
         except HttpStatusException:
