@@ -2,11 +2,11 @@
 
 Updated: 2026-10-28 (ownership triage). Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
 
-This is a working log for filing issues later. No external issues have been created. Entries distinguish confirmed defects, environment problems, resolved port adaptations, and checks still in progress. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
+This is a working log for filing issues later. No external issues have been created. Entries distinguish framework candidates, resolved port adaptations, and checks still in progress. Local environment and provisioning issues are excluded. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
 **Latest scope:** the user authorized a full review, functionality-based tests, and the newer veterinarian ETag/exception changes. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
 
-## Environment for these reproductions
+## Reproduction versions and configuration
 
 - Pyronaut SDK `0.0.3`; Micronaut Core `5.2.2`; SDK platform `5.1.0`.
 - Micronaut Data runtime/processor `5.2.3`; Micronaut Serialization `3.1.0`.
@@ -14,11 +14,11 @@ This is a working log for filing issues later. No external issues have been crea
 - Cached Oracle image `gvenzl/oracle-free:23.26.2-faststart`.
 - Early checks used `pyronaut test --no-validate`. The final 2026-10-27 matrix enabled configuration validation with one narrow suppression for `test-resources.containers.oracle.copy-to-container`; see PORT-027.
 
-Record a reduced reproduction and reconfirm it before opening an upstream issue. Several entries are resolved application differences or expected environment requirements, rather than defects to file against Pyronaut.
+Record a reduced reproduction and reconfirm it before opening an upstream issue. Several entries are resolved application differences rather than defects to file against Pyronaut.
 
 ## Ownership triage (2026-10-28)
 
-All **50 entries** are classified below. This is a source-and-artifact review of the recorded failures and current workarounds, not a new execution of the matrix or confirmation against newer framework releases. No external issues have been filed. Historical details below describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
+All **45 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings. This is a source-and-artifact review of the recorded failures and current workarounds, not a new execution of the matrix or confirmation against newer framework releases. No external issues have been filed. Historical details below describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
 
 | Primary classification | Entries | Meaning |
 | --- | ---: | --- |
@@ -26,7 +26,6 @@ All **50 entries** are classified below. This is a source-and-artifact review of
 | Framework improvement | 5 | Interop documentation, diagnostics or capability configuration; no correctness defect established |
 | Application/test | 22 | Our mappings, handlers, configuration, fixtures, tests or remaining port work |
 | Reference application | 3 | Java sample behavior or schema; not automatically a Pyronaut issue |
-| Environment | 5 | Interpreter/toolchain, container capability, network trust or database provisioning |
 | Unresolved | 4 | Evidence does not yet distinguish application setup from a library/runtime defect |
 
 Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 11 framework candidates, **10 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 10 proven Pyronaut defects.
@@ -36,12 +35,8 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | Finding | Primary classification | Owner, reasoning and disposition |
 | --- | --- | --- |
 | PORT-001 | Framework candidate | **Pyronaut script/executor integration.** Explicit blocking execution hangs script routes, while class controllers work. Retain the class-controller workaround; reduce scheduling before assigning the underlying runtime cause. |
-| PORT-002 | Environment | **Local JVM/Polyglot versions.** Incompatible compiler versions cause interpreter fallback. Align the toolchain; SDK compatibility preflight is an improvement. Reassign only if SDK dependency selection itself creates the mismatch. |
-| PORT-003 | Environment | **Test interpreter setup.** CPython 3.14 is not the matching embedded GraalPy environment. Preserve the separate environment; request CLI interpreter selection/early diagnostics as an improvement, not a Python-runtime correctness fix. |
 | PORT-004 | Unresolved | **Resource discovery and caller-sensitive Java invocation are separate failures.** `Environment` loading works. Isolate packaging/classloader selection from restricted MethodHandle access before routing to Pyronaut, GraalPy or application configuration. |
 | PORT-005 | Application/test | **Our error mapping.** A generic handler produced 500 for a missing entity; a specific 404 handler fixes it. No framework handler-precedence defect established. |
-| PORT-006 | Environment | **Oracle image capability.** The slim image lacks the required spatial type. Selecting the regular image fixes provisioning; no Pyronaut issue. |
-| PORT-007 | Environment | **Docker/network certificate trust.** Reuse the cached image. An image download failure is not a framework defect. |
 | PORT-008 | Application/test | **Test Resources server dependencies.** Explicit resolver modules fix startup. Automatic inference or a missing-resolver diagnostic is an SDK improvement only if that behavior is intended. |
 | PORT-009 | Framework improvement | **Interop documentation.** Java duration conversion to `timedelta` requires application normalization; no stored-value loss was demonstrated. Document the supported representation. |
 | PORT-010 | Unresolved | **Period conversion/comparison.** Normalization fixes the bound, but the cause could be application expectations, Data conversion or the Oracle driver. Compare all three before filing. |
@@ -81,7 +76,6 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-044 | Application/test | **Our feature lag.** New vet CRUD/ETags/exception contracts are ported. A Python method name colliding with Java's `new` keyword was corrected locally; no separate framework defect demonstrated. |
 | PORT-045 | Framework candidate | **Mixed:** nullable typed IDs becoming zero (**045a**) warrant a binding/serialization defect investigation; `ForeignNone` identity in object collections (**045b**) is an interop adaptation. Reject malformed inputs before deduplication in our code. |
 | PORT-046 | Framework candidate | **Micronaut Data ETag SQL generation.** Unquoted mapped identifiers break PostgreSQL. Generated lowercase aliases are our workaround; prove the Java control before describing this as Pyronaut-specific. PostgreSQL identifier folding is expected. |
-| PORT-047 | Environment | **MySQL provisioning.** Binary-log routine-creation requirements are server policy. Local container settings fix tests; external databases need suitable DBA provisioning, not an SDK code change. |
 | PORT-048 | Application/test | **Our validation/storage mismatch.** Widening descriptions and Oracle character semantics fixes accepted Unicode text exceeding storage. Keep additive migrations and boundary coverage. |
 | PORT-049 | Application/test | **Our test fixture assumption.** ID 1 was intentionally removed by exact legacy cleanup. Resolve a real visit instead; fixed, no upstream issue. |
 | PORT-050 | Application/test | **Mixed:** enum mirror normalization (**050a**) is an application interop adaptation related to PORT-021; missing write transaction in the lock test (**050b**) was a test setup error. MySQL correctly rejects locking in a read-only transaction. |
@@ -110,7 +104,6 @@ File one issue per independently reproducible cause. PORT-035 and PORT-039 are r
 
 These are enhancement/documentation requests, not additions to the defect count. Group related symptoms before filing:
 
-- **Toolchain and interpreter selection (PORT-002/003):** compatibility checks before launch, an actionable interpreter mismatch message and explicit supported test-environment selection. First establish which versions/configuration the SDK actually chose.
 - **Interop guide (PORT-009/015/021/026/045b/050a):** duration representations, validation-node traversal, repository mirror construction, enum names, foreign null checks and catching foreign exceptions. Offer convenience APIs only where their contract is clear; document the current supported path first.
 - **Runtime capability guide (PORT-024):** document Python thread restrictions and supported context options. Preserve Java async as the already verified way to exercise overlapping requests; do not imply concurrency is unsupported generally.
 - **Test Resources diagnostics (PORT-008/027a/028/037):** explain missing server modules, reject unsupported copy shapes instead of silently ignoring them, explain server versus application classpaths, and identify unsupported lazy datasource resolution clearly. Automatic inference/resource staging is an enhancement unless a supported contract promises it.
@@ -150,24 +143,6 @@ For each candidate, record the installed versions above, original failure, small
 - **Workaround:** Existing script handlers use the SDK's default execution path. The priority feature uses a class controller with `@ExecuteOn("blocking")`; real overlapping LOW/HIGH requests now pass with that pattern.
 - **Fix needed:** Isolate a minimal reproduction, inspect script context scheduling across executor changes, and verify two independent overlapping requests and transactions. The root cause is not established.
 
-### PORT-002 — JVM compiler and embedded Polyglot versions are incompatible locally
-
-- **Area:** Local Pyronaut/GraalVM toolchain.
-- **Observed:** The engine reports compiler `25.4.4.1.1` from Java `25.0.4.1.1+1-LTS-jvmci-25.4-b23` incompatible with Polyglot `25.3.4.1`; execution falls back to an interpreter.
-- **Reproduction:** Run `pyronaut process` or `pyronaut test --no-validate` with the currently installed local toolchain.
-- **Impact:** Functional checks run, but timing is not representative of an optimized deployment.
-- **Workaround:** Keep version checks enabled and use the fallback runtime while porting.
-- **Fix needed:** Align the SDK's Polyglot dependencies and Java/GraalVM compiler versions, then repeat functional and distribution checks.
-
-### PORT-003 — Existing CPython virtual environment is incompatible with embedded pytest
-
-- **Area:** Pyronaut CLI test environment selection.
-- **Observed:** The repository's `.venv` is CPython 3.14, while this SDK's embedded test runtime needs matching GraalPy 3.13. The CLI autoactivates the project `.venv`; merely changing `PYTHONPATH` did not provide a working test environment.
-- **Reproduction:** Run the embedded Pyronaut test command with this CPython `.venv` selected.
-- **Impact:** A normal local test invocation cannot use that environment.
-- **Workaround:** Preserve the user's `.venv`; use a separate GraalPy `3.13-25.3.4.1` environment and an isolated application copy for integration checks.
-- **Fix needed:** Detect and explain the incompatible interpreter before running pytest, or provide explicit supported test-interpreter selection. Confirm the intended SDK behavior before filing upstream.
-
 ### PORT-004 — Direct Java resource access from Python fails across class-loader boundaries
 
 - **Area:** Python-to-Java resource access in this runtime.
@@ -184,18 +159,6 @@ For each candidate, record the installed versions above, original failure, small
 - **Historical reproduction:** Request `/owners/999999` with only the generic global handler installed and inspect the response and captured server log. The current port includes the specific handler described below.
 - **Impact before the fix:** Missing entities did not match the reference's error contract.
 - **Resolution (verified):** Add a specific global `NotFoundException` view handler returning HTTP 404. Missing routes and missing owner/pet checks passed in the subsequent integration run. The generic handler remains for other exceptions.
-
-### PORT-006 — Slim Oracle image lacks spatial types
-
-- **Observed:** The clinic migration failed with `ORA-00902: invalid datatype` on the slim image when creating `MDSYS.SDO_GEOMETRY` columns.
-- **Resolution:** Select the already cached regular `gvenzl/oracle-free:23.26.2-faststart` image in Test Resources and CI. Spatial migrations and generated nearby/within/intersection queries passed on it.
-- **Issue disposition:** Configuration requirement, not a confirmed Pyronaut defect.
-
-### PORT-007 — Requested Oracle image download fails certificate validation
-
-- **Observed:** Pulling `gvenzl/oracle-free:23.26.3-faststart` failed because Docker could not validate a download endpoint's certificate chain (`unknown authority`).
-- **Resolution:** Honor the user's request to use existing images; use the cached regular `23.26.2-faststart` image. No further image download is required for local checks.
-- **Issue disposition:** Local registry/network trust configuration; investigate separately only if downloads are needed later.
 
 ### PORT-008 — Oracle Test Resources resolver was absent from the server
 
@@ -486,7 +449,7 @@ These items are documented proposals, not implemented additions or current stabi
 | Concurrent first catalog insert | Submit overlapping writes for a previously absent clinic/code, retaining generated upsert and uniqueness | One persisted row and identity; responses follow the chosen reference contract; no partial combined row |
 | Browser and visual parity | Compare locale switching, forms, maps, catalog pages, care editor and priority interactions with the reference | Manual browser evidence, including unavailable CDN assets and JavaScript-driven results |
 | Distribution and production configuration | Exercise packaged startup away from the repository root, resource/static loading and external datasource overrides/fallbacks; review management endpoints against the reference | Packaged routes/assets/resources work; configured database connections resolve correctly; intended health/security behavior matches the source |
-| Toolchain and CI | Resolve the recorded GraalPy/JVM mismatch, review SDK configuration validation, and execute the configured four-profile remote CI matrix | Matching runtime versions; explicit validation result; successful remote jobs with honest skip counts |
+| CI verification | Review SDK configuration validation and execute the configured four-profile remote CI matrix | Explicit validation result; successful remote jobs with honest skip counts |
 
 Keep the source reference checkout and the user's existing CPython environment unchanged. Continue using already cached images locally. Oracle Deep Data Security is outside this backlog's implementation scope unless separately requested.
 
@@ -534,14 +497,6 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 - **Resolution:** `db/postgres/V5__etag_identifier_aliases.sql` adds computed lowercase aliases for first name, last name and the speciality hash. They derive from the canonical columns and cannot be independently changed. The ORM still generates and enforces the ETag predicate; no Python compare-then-write replacement was introduced.
 - **Evidence:** The first corrected PostgreSQL run passed all 84 then-current shared cases, including stale link rollback; final coverage is recorded below. Initial failures are preserved under `__pyronaut__/reports/review-20261026/postgres-initial/`.
 - **Disposition:** Micronaut Data generated ETag transformer/identifier quoting candidate. Reduce on both Java and Python before claiming it is Python-specific.
-
-### PORT-047 — MySQL cannot create the ETag routine with ordinary fixture privileges
-
-- **Observed:** Migration `V4__vet_etags.sql` failed with MySQL error 1419: binary logging was enabled and the fixture user did not have SUPER privilege. Most suite failures were consequences of that one application-startup failure.
-- **Resolution:** Set the local Test Resources container command to `--log-bin-trust-function-creators=1`, then create the deterministic routine through the migration. The application user was not granted SUPER. The cached `mysql:8.4.5` image was reused.
-- **Evidence:** After this configuration change, all 94 then-current shared MySQL cases passed. Final counts include additional direct repository and text-limit checks.
-- **External databases:** DBA provisioning or appropriate routine-creation settings/privileges remain a deployment prerequisite. The local container command does not configure an existing production server.
-- **Disposition:** Database provisioning requirement; no SDK defect established.
 
 ### PORT-048 — Valid text at the API limit exceeds schema storage limits
 
