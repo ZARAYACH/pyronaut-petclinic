@@ -148,7 +148,7 @@ Test Resources supplies external datasource URLs and credentials during developm
 
 MySQL Test Resources enables creation of the deterministic ETag routine in its local container. Existing MySQL servers require appropriate routine provisioning/settings. PostgreSQL has a computed-column workaround for generated ETag identifier quoting; details are recorded in the issue log. Original migration files are preserved, with schema and fixture corrections applied through new versions.
 
-The regular Oracle image includes spatial types; the slim image cannot run that feature. PostgreSQL uses PostGIS for the same spatial operations. CI selects the same pinned images in a four-profile matrix and downloads them only when its image cache is missing. Local verification uses the existing cached images.
+The regular Oracle image includes spatial types; the slim image cannot run that feature. PostgreSQL uses PostGIS for the same spatial operations. CI runs the four database profiles through `pyronaut test`; Test Resources/Testcontainers provisions and cleans up the databases using the image settings in each profile. H2 runs in memory. Local verification uses the existing cached images.
 
 The migrations provide visit intervals, 20 clinic branches, 62 service offerings and appointment fixtures. Oracle additionally has native interval/vector storage and the owner-care duality view; its startup loader reads the reference's 10 knowledge documents and 20 chunks. Oracle Deep Data Security is deferred. Fixture lifecycle differences and remaining parity checks are tracked in the issue log.
 

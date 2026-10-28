@@ -18,19 +18,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - database: h2
-            image: ''
-          - database: oracle
-            image: gvenzl/oracle-free:23.26.2-faststart
-          - database: postgres
-            image: postgis/postgis:18-3.6-alpine
-          - database: mysql
-            image: mysql:8.4.5
+        database: [h2, oracle, postgres, mysql]
     env:
-      TESTCONTAINERS_RYUK_DISABLED: true
       PETCLINIC_TEST_DATABASE: ${{ matrix.database }}
-      DATABASE_IMAGE: ${{ matrix.image }}
 
     steps:
       - name: Check out PetClinic
@@ -40,32 +30,6 @@ jobs:
         uses: micronaut-projects/setup-pyronaut@v1
         with:
           pytest-version: '9.1.1'
-
-      # Roll the cache monthly to pick up image maintenance updates.
-      - name: Compute database image cache key
-        if: matrix.image != ''
-        id: database-image-key
-        run: |
-          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
-          echo "DATABASE_IMAGE_ARCHIVE=$RUNNER_TEMP/petclinic-database.tar" >> "$GITHUB_ENV"
-
-      - name: Cache database image
-        if: matrix.image != ''
-        id: database-image-cache
-        uses: actions/cache@v6
-        with:
-          path: ${{ env.DATABASE_IMAGE_ARCHIVE }}
-          key: docker-${{ runner.os }}-${{ matrix.database }}-${{ env.DATABASE_IMAGE }}-${{ steps.database-image-key.outputs.month }}
-
-      - name: Load cached database image
-        if: matrix.image != '' && steps.database-image-cache.outputs.cache-hit == 'true'
-        run: docker load --input "$DATABASE_IMAGE_ARCHIVE"
-
-      - name: Pull database image
-        if: matrix.image != '' && steps.database-image-cache.outputs.cache-hit != 'true'
-        run: |
-          docker pull "$DATABASE_IMAGE"
-          docker save --output "$DATABASE_IMAGE_ARCHIVE" "$DATABASE_IMAGE"
 
       - name: Install project dependencies
         run: pyronaut install --progress off
