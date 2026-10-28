@@ -28,7 +28,7 @@ The [porting issue log](docs/porting-issues.md) records encountered problems, re
 
 ## Requirements
 
-- A recent Pyronaut SDK installed from the matching Pyronaut development branch.
+- Pyronaut SDK installed and on `PATH`. The current application was verified with SDK `0.1.1`.
 - Docker or a compatible container runtime for external database Test Resources; H2 runs in memory.
 - Java/GraalVM requirements as expected by the installed Pyronaut SDK.
 
@@ -69,13 +69,14 @@ Concrete dialect repositories retain their explicit CRUD/query declarations beca
 
 ## Install Dependencies
 
-From the repository root:
+Provision the installed SDK once, then install the project dependencies from the repository root:
 
 ```bash
+pyronaut setup
 pyronaut install
 ```
 
-This resolves runtime, build, test, and development dependencies into the local Pyronaut cache directory.
+`pyronaut install` resolves JVM dependencies and creates a matching GraalPy `.venv` with pytest when no project environment exists. An existing environment must be compatible with the installed SDK.
 
 ## Run
 
@@ -91,7 +92,7 @@ MICRONAUT_ENVIRONMENTS=oracle pyronaut dev
 
 Shared `application.toml` contains no datasource settings. H2 connection and migration settings live in `application-h2.toml`; a small Micronaut context configurer loads that fallback only when no database profile is active, including ordinary `dev` and `test` startup. Explicit database profiles load their own configuration without inheriting H2 values. Test Resources resolves external connection details; an existing server can be configured through `DATASOURCES_DEFAULT_URL`, `DATASOURCES_DEFAULT_USERNAME` and `DATASOURCES_DEFAULT_PASSWORD`.
 
-`pyronaut dev` starts Test Resources for development. `pyronaut run` uses an existing database and needs its connection settings; `pyronaut run dev` passes `dev` as an application argument rather than selecting development mode.
+`pyronaut dev` starts Test Resources for development. `pyronaut run` launches the processed application without starting Test Resources; external database profiles need an existing database and its connection settings. The default H2 configuration remains in memory. `pyronaut run dev` passes `dev` as an application argument rather than selecting development mode.
 
 The visits search, knowledge, priority and care-record routes below are enabled only in the `oracle` environment, matching the reference. Ordinary visit creation and history are shared by all profiles.
 
@@ -104,11 +105,11 @@ Useful routes:
 - `http://localhost:8080/vets/new`
 - `http://localhost:8080/vets/specialities`
 - `http://localhost:8080/clinics`
-- `http://localhost:8080/visits`
-- `http://localhost:8080/knowledge`
-- `http://localhost:8080/oracle/transaction-priority`
-- `http://localhost:8080/owners/1/care-record`
-- `http://localhost:8080/control-panel`
+- `http://localhost:8080/visits` — Oracle only
+- `http://localhost:8080/knowledge` — Oracle only
+- `http://localhost:8080/oracle/transaction-priority` — Oracle only
+- `http://localhost:8080/owners/1/care-record` — Oracle only
+- `http://localhost:8080/control-panel` — development mode
 - `http://localhost:8080/health`
 - `http://localhost:8080/info`
 
@@ -118,7 +119,7 @@ Useful routes:
 pyronaut test
 ```
 
-The default test invocation selects Oracle and exercises all feature checks. Select a shared database profile with `PETCLINIC_TEST_DATABASE`:
+The default test invocation selects Oracle and runs shared and Oracle-specific checks, skipping the H2-only connection regression. Select another database profile with `PETCLINIC_TEST_DATABASE`:
 
 ```bash
 PETCLINIC_TEST_DATABASE=h2 pyronaut test
@@ -136,14 +137,14 @@ Use a GraalPy environment matching the installed Pyronaut SDK for pytest. An ord
 
 H2 is the default in-memory database, matching the reference. All profiles use Hikari. Each has its own repository beans and migration location; existing Oracle migration history remains intact.
 
-| Environment | Configuration | Local database |
+| Environment | Configuration | Development/test database |
 | --- | --- | --- |
-| Default | `config/application.toml` | H2 with H2GIS |
-| `oracle` | `config/application-oracle.toml` | Cached `gvenzl/oracle-free:23.26.2-faststart` |
-| `postgres` | `config/application-postgres.toml` | Cached `postgis/postgis:18-3.6-alpine` |
-| `mysql` | `config/application-mysql.toml` | Cached `mysql:8.4.5` |
+| Default / `h2` | `config/application-h2.toml` | In-memory H2 with H2GIS |
+| `oracle` | `config/application-oracle.toml` | `gvenzl/oracle-free:23.26.2-faststart` |
+| `postgres` | `config/application-postgres.toml` | `postgis/postgis:18-3.6-alpine` |
+| `mysql` | `config/application-mysql.toml` | `mysql:8.4.5` |
 
-External profiles use Test Resources URL/credential expressions during SDK development/tests and the reference's localhost settings as fallbacks without Test Resources. Standard `DATASOURCES_DEFAULT_URL`, `DATASOURCES_DEFAULT_USERNAME` and `DATASOURCES_DEFAULT_PASSWORD` environment variables can supply an existing database.
+Test Resources supplies external datasource URLs and credentials during development/tests. External profiles contain no hardcoded connection URL or localhost fallback. For an existing database, provide `DATASOURCES_DEFAULT_URL`, `DATASOURCES_DEFAULT_USERNAME` and `DATASOURCES_DEFAULT_PASSWORD`.
 
 MySQL Test Resources enables creation of the deterministic ETag routine in its local container. Existing MySQL servers require appropriate routine provisioning/settings. PostgreSQL has a computed-column workaround for generated ETag identifier quoting; details are recorded in the issue log. Original migration files are preserved, with schema and fixture corrections applied through new versions.
 
