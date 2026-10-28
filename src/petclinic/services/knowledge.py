@@ -1,5 +1,7 @@
 """Knowledge application services."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 import json
 from typing import Annotated
 from jakarta.inject import Inject, Singleton
@@ -13,7 +15,7 @@ from petclinic.repositories.knowledge import PetCareDocumentRepository, PetCareC
 from petclinic.services.embeddings import StaticPetCareEmbeddingService
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @Singleton
 class PetCareKnowledgeService:
     resources: Annotated[ApplicationResources, Inject]
@@ -48,7 +50,7 @@ class PetCareKnowledgeService:
 
 
 @Factory
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @Requires(property='petclinic.sample-data.enabled', value='true', defaultValue='true')
 class PetCareKnowledgeLoader:
     knowledge: Annotated[PetCareKnowledgeService, Inject]

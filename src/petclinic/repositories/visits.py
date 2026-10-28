@@ -1,5 +1,7 @@
 """Visits repository contracts and database-specific implementations."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_H2, DIALECT_MYSQL, DIALECT_ORACLE, DIALECT_POSTGRES
+
 from typing import Protocol
 from java.time import Duration
 from java.time import LocalDate
@@ -41,7 +43,7 @@ class VisitRepository(GenericRepository[Visit, int], Protocol):
     ) -> list[Visit]: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2VisitRepository(VisitRepository, CrudRepository[Visit, int], Protocol):
     @Query(value="SELECT v.* FROM VISITS v WHERE v.PET_ID = :petId ORDER BY v.VISIT_DATE DESC", nativeQuery=True)
@@ -71,7 +73,7 @@ class H2VisitRepository(VisitRepository, CrudRepository[Visit, int], Protocol):
     ) -> list[Visit]: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleVisitRepository(VisitRepository, CrudRepository[Visit, int], Protocol):
     @Query(value="SELECT v.* FROM VISITS v WHERE v.PET_ID = :petId ORDER BY v.VISIT_DATE DESC", nativeQuery=True)
@@ -101,7 +103,7 @@ class OracleVisitRepository(VisitRepository, CrudRepository[Visit, int], Protoco
     ) -> list[Visit]: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlVisitRepository(VisitRepository, CrudRepository[Visit, int], Protocol):
     @Query(value="SELECT v.* FROM VISITS v WHERE v.PET_ID = :petId ORDER BY v.VISIT_DATE DESC", nativeQuery=True)
@@ -131,7 +133,7 @@ class MySqlVisitRepository(VisitRepository, CrudRepository[Visit, int], Protocol
     ) -> list[Visit]: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresVisitRepository(VisitRepository, CrudRepository[Visit, int], Protocol):
     @Query(value='SELECT v.* FROM "VISITS" v WHERE v."PET_ID" = :petId ORDER BY v."VISIT_DATE" DESC', nativeQuery=True)

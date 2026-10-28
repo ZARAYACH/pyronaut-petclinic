@@ -1,5 +1,7 @@
 """Owners repository contracts and database-specific implementations."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_H2, DIALECT_MYSQL, DIALECT_ORACLE, DIALECT_POSTGRES
+
 from typing import Protocol
 from micronaut.data.annotation import Join
 from micronaut.data.repository import GenericRepository
@@ -27,7 +29,7 @@ class OwnerRepository(GenericRepository[Owner, int], Protocol):
     def findByLastNameContainingIgnoreCaseOrderByLastName(self, lastName: str) -> list[Owner]: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2OwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protocol):
 
@@ -46,7 +48,7 @@ class H2OwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protocol):
     def findByLastNameContainingIgnoreCaseOrderByLastName(self, lastName: str) -> list[Owner]: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleOwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protocol):
 
@@ -65,7 +67,7 @@ class OracleOwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protoco
     def findByLastNameContainingIgnoreCaseOrderByLastName(self, lastName: str) -> list[Owner]: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlOwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protocol):
 
@@ -84,7 +86,7 @@ class MySqlOwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protocol
     def findByLastNameContainingIgnoreCaseOrderByLastName(self, lastName: str) -> list[Owner]: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresOwnerRepository(OwnerRepository, CrudRepository[Owner, int], Protocol):
 

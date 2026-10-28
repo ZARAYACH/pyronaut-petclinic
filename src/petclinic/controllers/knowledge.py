@@ -1,5 +1,7 @@
 """Knowledge HTTP handling."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 from typing import Annotated
 from jakarta.inject import Inject
 from micronaut.context.annotation import Requires
@@ -11,7 +13,7 @@ from petclinic.dtos.knowledge import PetCareSearchRequest
 
 
 @Controller('/knowledge')
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 class PetCareKnowledgeController:
     knowledge: Annotated[PetCareKnowledgeService, Inject]
 

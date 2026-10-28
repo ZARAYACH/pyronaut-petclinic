@@ -1,5 +1,7 @@
 """Vets repository contracts and database-specific implementations."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_H2, DIALECT_MYSQL, DIALECT_ORACLE, DIALECT_POSTGRES
+
 from typing import Protocol
 from micronaut.data.annotation import Query
 from micronaut.data.repository import GenericRepository
@@ -49,7 +51,7 @@ class VetSpecialityRepository(GenericRepository[VetSpeciality, VetSpeciality], P
     def findSpecialitiesByVetId(self, vetId: int) -> list[Speciality]: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2VetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     @Query(value="SELECT\nv.id,\nv.FIRST_NAME AS first_name,\nv.LAST_NAME AS last_name,\nLISTAGG(\nCASE WHEN s.id IS NOT NULL THEN s.id || ':' || s.NAME END,\n'|'\n) WITHIN GROUP (ORDER BY s.NAME) AS speciality_rows\nFROM VETS v\nLEFT JOIN VET_SPECIALTIES vs ON vs.VET_ID = v.id\nLEFT JOIN SPECIALTIES s ON s.id = vs.SPECIALTY_ID\nGROUP BY v.id, v.FIRST_NAME, v.LAST_NAME\nORDER BY v.LAST_NAME", nativeQuery=True)
@@ -67,7 +69,7 @@ class H2VetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2SpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
 
@@ -83,7 +85,7 @@ class H2SpecialityRepository(SpecialityRepository, CrudRepository[Speciality, in
     def existsByName(self, name: str) -> bool: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2VetSpecialityRepository(VetSpecialityRepository, Protocol):
     @Query(value="SELECT s.* FROM SPECIALTIES s JOIN VET_SPECIALTIES vs ON vs.SPECIALTY_ID = s.id WHERE vs.VET_ID = :vetId ORDER BY s.NAME", nativeQuery=True)
@@ -92,7 +94,7 @@ class H2VetSpecialityRepository(VetSpecialityRepository, Protocol):
     def save(self, entity: VetSpeciality) -> None: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     @Query(value="SELECT\nv.id,\nv.FIRST_NAME AS first_name,\nv.LAST_NAME AS last_name,\nLISTAGG(\nCASE WHEN s.id IS NOT NULL THEN s.id || ':' || s.NAME END,\n'|'\n) WITHIN GROUP (ORDER BY s.NAME) AS speciality_rows\nFROM VETS v\nLEFT JOIN VET_SPECIALTIES vs ON vs.VET_ID = v.id\nLEFT JOIN SPECIALTIES s ON s.id = vs.SPECIALTY_ID\nGROUP BY v.id, v.FIRST_NAME, v.LAST_NAME\nORDER BY v.LAST_NAME", nativeQuery=True)
@@ -110,7 +112,7 @@ class OracleVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleSpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
 
@@ -126,7 +128,7 @@ class OracleSpecialityRepository(SpecialityRepository, CrudRepository[Speciality
     def existsByName(self, name: str) -> bool: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleVetSpecialityRepository(VetSpecialityRepository, Protocol):
     @Query(value="SELECT s.* FROM SPECIALTIES s JOIN VET_SPECIALTIES vs ON vs.SPECIALTY_ID = s.id WHERE vs.VET_ID = :vetId ORDER BY s.NAME", nativeQuery=True)
@@ -135,7 +137,7 @@ class OracleVetSpecialityRepository(VetSpecialityRepository, Protocol):
     def save(self, entity: VetSpeciality) -> None: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     @Query(value="SELECT\nv.id,\nv.FIRST_NAME AS first_name,\nv.LAST_NAME AS last_name,\nGROUP_CONCAT(\nCASE WHEN s.id IS NOT NULL THEN CONCAT(s.id, ':', s.NAME) END\nORDER BY s.NAME SEPARATOR '|'\n) AS speciality_rows\nFROM VETS v\nLEFT JOIN VET_SPECIALTIES vs ON vs.VET_ID = v.id\nLEFT JOIN SPECIALTIES s ON s.id = vs.SPECIALTY_ID\nGROUP BY v.id, v.FIRST_NAME, v.LAST_NAME\nORDER BY v.LAST_NAME", nativeQuery=True)
@@ -153,7 +155,7 @@ class MySqlVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlSpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
 
@@ -169,7 +171,7 @@ class MySqlSpecialityRepository(SpecialityRepository, CrudRepository[Speciality,
     def existsByName(self, name: str) -> bool: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlVetSpecialityRepository(VetSpecialityRepository, Protocol):
     @Query(value="SELECT s.* FROM SPECIALTIES s JOIN VET_SPECIALTIES vs ON vs.SPECIALTY_ID = s.id WHERE vs.VET_ID = :vetId ORDER BY s.NAME", nativeQuery=True)
@@ -178,7 +180,7 @@ class MySqlVetSpecialityRepository(VetSpecialityRepository, Protocol):
     def save(self, entity: VetSpeciality) -> None: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     @Query(value='SELECT\nv.id,\nv."FIRST_NAME" AS first_name,\nv."LAST_NAME" AS last_name,\nSTRING_AGG(\nCASE WHEN s.id IS NOT NULL THEN s.id::text || \':\' || s."NAME" END,\n\'|\' ORDER BY s."NAME"\n) AS speciality_rows\nFROM "VETS" v\nLEFT JOIN "VET_SPECIALTIES" vs ON vs."VET_ID" = v.id\nLEFT JOIN "SPECIALTIES" s ON s.id = vs."SPECIALTY_ID"\nGROUP BY v.id, v."FIRST_NAME", v."LAST_NAME"\nORDER BY v."LAST_NAME"', nativeQuery=True)
@@ -196,7 +198,7 @@ class PostgresVetRepository(VetRepository, CrudRepository[Vet, int], Protocol):
     def insertSpecialityLink(self, vetId: int, specialityId: int) -> None: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresSpecialityRepository(SpecialityRepository, CrudRepository[Speciality, int], Protocol):
     @Query(value='SELECT * FROM "SPECIALTIES" ORDER BY "NAME"', nativeQuery=True)
@@ -210,7 +212,7 @@ class PostgresSpecialityRepository(SpecialityRepository, CrudRepository[Speciali
     def existsByName(self, name: str) -> bool: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresVetSpecialityRepository(VetSpecialityRepository, Protocol):
     @Query(value='SELECT s.* FROM "SPECIALTIES" s JOIN "VET_SPECIALTIES" vs ON vs."SPECIALTY_ID" = s.id WHERE vs."VET_ID" = :vetId ORDER BY s."NAME"', nativeQuery=True)

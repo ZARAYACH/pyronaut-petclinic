@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from jakarta.inject import Inject, Singleton
+from java.lang import String
 from micronaut.context import MessageSource
 from micronaut.context.annotation import Factory
 from micronaut.context.env import Environment
@@ -13,6 +14,7 @@ from micronaut.views import ModelAndView
 from micronaut.views.model import ViewModelProcessor
 
 from .resources import ApplicationResources
+from .constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
 
 
 @Factory
@@ -36,6 +38,7 @@ class ViewSupport:
             model.setdefault("msg", messages)
             model.setdefault("locale", str(locale))
             model.setdefault("requestPath", str(request.getPath()))
-            model.setdefault("activeNames", list(self.environment.getActiveNames()))
+            model.setdefault("oracleEnabled", self.environment.getProperty(
+                DEFAULT_DIALECT_PROPERTY, String).orElse('') == DIALECT_ORACLE)
             modelAndView.setModel(model)
         return process

@@ -22,7 +22,7 @@ The default test profile is Oracle. Each invocation has one application/database
 | Resources, embeddings and Oracle retrieval | `test_embeddings.py`, `test_knowledge.py` |
 | JSON duality care records | `test_care_records.py` |
 | Appointment persistence and Oracle priority | `test_appointment_repository.py`, `test_priority.py` |
-| Errors, locale and profile gating | `test_exception_handling.py`, `test_locale.py`, `test_database_profiles.py` |
+| Errors, locale and dialect gating | `test_exception_handling.py`, `test_locale.py`, `test_database_profiles.py` |
 
 Oracle-only modules declare `pytest.mark.skipif` explicitly. Ordinary visit creation is also exercised by the shared owner workflow. The H2GIS physical-connection regression runs only on H2. Shared geometry and appointment repository checks run on all four profiles.
 
@@ -30,7 +30,7 @@ The HTTP fixture is non-transactional so requests use their real service transac
 
 Pytest uses Python stream capture (`--capture=sys`, configured in `pyproject.toml`) because the updated embedded runner fails with default file-descriptor capture. Care-record children retain their field constraints and are validated explicitly; nested collection `Valid` annotations generate invalid Java on SDK 0.1.1. See PORT-018/051 in the issue log.
 
-Java mirrors live under their layer packages: `petclinic.repositories`, `petclinic.services`, `petclinic.models` and `petclinic.dtos`. Python imports use the owning functionality module. The profile regression checks the actual database product and JDBC URL, including the default H2 fallback when the fixture selects only the `test` environment.
+Java mirrors live under their layer packages: `petclinic.repositories`, `petclinic.services`, `petclinic.models` and `petclinic.dtos`. Python imports use the owning functionality module. The database regression checks the actual database product and JDBC URL, including the default H2 fallback when the fixture selects only the `test` environment. Separate bean-selection checks configure dialects through flat, nested and environment-style properties under custom profiles, and verify that a conflicting profile name does not override the dialect or enable Oracle-only features.
 
 Add tests to the relevant functionality module. Use dedicated records and clean them up when mutating canonical data. Some older workflow fixtures intentionally live for the session, so use actual repository IDs and avoid assuming a suite-wide row count or sequence value. Configuration validation runs with one documented SDK schema suppression; see `pyproject.toml`.
 

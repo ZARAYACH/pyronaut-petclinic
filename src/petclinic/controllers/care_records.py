@@ -1,5 +1,7 @@
 """Care records HTTP handling."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 from typing import Annotated
 from jakarta.inject import Inject
 from jakarta.validation import Validator
@@ -32,7 +34,7 @@ def disallowed_operation(error) -> bool:
 
 
 @Controller('/')
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 class OwnerCareRecordController:
     service: Annotated[OwnerCareViewService, Inject]
     validator: Annotated[Validator, Inject]

@@ -1,5 +1,7 @@
 """Embeddings application services."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 import base64
 import struct
 from functools import lru_cache
@@ -29,7 +31,7 @@ def vector_catalog(data: str) -> dict[str, tuple[float, ...]]:
     return vectors
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @Singleton
 class StaticPetCareEmbeddingService:
     resources: Annotated[ApplicationResources, Inject]

@@ -1,5 +1,7 @@
 """Pets repository contracts and database-specific implementations."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_H2, DIALECT_MYSQL, DIALECT_ORACLE, DIALECT_POSTGRES
+
 from typing import Protocol
 from micronaut.data.annotation import Join
 from micronaut.data.annotation import Query
@@ -32,7 +34,7 @@ class PetTypeRepository(GenericRepository[PetType, int], Protocol):
     def findAllOrderByName(self) -> list[PetType]: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2PetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     @Query(value="SELECT p.* FROM PETS p WHERE p.OWNER_ID = :ownerId ORDER BY p.NAME", nativeQuery=True)
@@ -44,7 +46,7 @@ class H2PetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     def findOneById(self, id: int) -> Pet | None: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2PetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Protocol):
 
@@ -55,7 +57,7 @@ class H2PetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Proto
     def findAllOrderByName(self) -> list[PetType]: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OraclePetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     @Query(value="SELECT p.* FROM PETS p WHERE p.OWNER_ID = :ownerId ORDER BY p.NAME", nativeQuery=True)
@@ -67,7 +69,7 @@ class OraclePetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     def findOneById(self, id: int) -> Pet | None: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OraclePetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Protocol):
 
@@ -78,7 +80,7 @@ class OraclePetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], P
     def findAllOrderByName(self) -> list[PetType]: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlPetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     @Query(value="SELECT p.* FROM PETS p WHERE p.OWNER_ID = :ownerId ORDER BY p.NAME", nativeQuery=True)
@@ -90,7 +92,7 @@ class MySqlPetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     def findOneById(self, id: int) -> Pet | None: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlPetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Protocol):
 
@@ -101,7 +103,7 @@ class MySqlPetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Pr
     def findAllOrderByName(self) -> list[PetType]: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresPetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     @Query(value='SELECT p.* FROM "PETS" p WHERE p."OWNER_ID" = :ownerId ORDER BY p."NAME"', nativeQuery=True)
@@ -113,7 +115,7 @@ class PostgresPetRepository(PetRepository, CrudRepository[Pet, int], Protocol):
     def findOneById(self, id: int) -> Pet | None: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresPetTypeRepository(PetTypeRepository, CrudRepository[PetType, int], Protocol):
     @Query(value='SELECT * FROM "TYPES" ORDER BY "NAME"', nativeQuery=True)

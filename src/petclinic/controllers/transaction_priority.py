@@ -1,5 +1,7 @@
 """Transaction priority HTTP handling."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 import logging
 import java
 from typing import Annotated
@@ -45,7 +47,7 @@ def booking_outcome(error) -> BookingOutcome:
 
 
 @Controller('/oracle/transaction-priority')
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @ExecuteOn('blocking')
 class OracleTransactionPriorityController:
     service: Annotated[OracleTransactionPriorityService, Inject]

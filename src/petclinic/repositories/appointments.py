@@ -1,5 +1,7 @@
 """Appointments repository contracts and database-specific implementations."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_H2, DIALECT_MYSQL, DIALECT_ORACLE, DIALECT_POSTGRES
+
 from typing import Protocol
 from micronaut.data.annotation import Query
 from micronaut.data.repository import GenericRepository, CrudRepository
@@ -19,7 +21,7 @@ class AppointmentRepository(GenericRepository[Appointment, int], Protocol):
     def findOneById(self, id: int) -> Appointment | None: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2AppointmentRepository(AppointmentRepository, CrudRepository[Appointment, int], Protocol):
 
@@ -33,7 +35,7 @@ class H2AppointmentRepository(AppointmentRepository, CrudRepository[Appointment,
     def findOneById(self, id: int) -> Appointment | None: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleAppointmentRepository(AppointmentRepository, CrudRepository[Appointment, int], Protocol):
 
@@ -47,7 +49,7 @@ class OracleAppointmentRepository(AppointmentRepository, CrudRepository[Appointm
     def findOneById(self, id: int) -> Appointment | None: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlAppointmentRepository(AppointmentRepository, CrudRepository[Appointment, int], Protocol):
     @Query(value="SELECT a.* FROM APPOINTMENTS a WHERE a.ID = :appointmentId FOR UPDATE", nativeQuery=True)
@@ -59,7 +61,7 @@ class MySqlAppointmentRepository(AppointmentRepository, CrudRepository[Appointme
     def findOneById(self, id: int) -> Appointment | None: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresAppointmentRepository(AppointmentRepository, CrudRepository[Appointment, int], Protocol):
     @Query(value='SELECT a.* FROM "APPOINTMENTS" a WHERE "STATUS" = \'AVAILABLE\' ORDER BY "DISPLAY_ORDER", ID', nativeQuery=True)

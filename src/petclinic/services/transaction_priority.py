@@ -1,5 +1,7 @@
 """Transaction priority application services."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 import time
 from typing import Annotated
 from jakarta.inject import Inject, Singleton
@@ -10,7 +12,7 @@ from petclinic.repositories.appointments import AppointmentRepository
 
 
 @Singleton
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 class OracleTransactionPriorityService:
     appointments: Annotated[AppointmentRepository, Inject]
     reservationSeconds: Annotated[int, Value('${petclinic.transaction-priority.reservation-seconds:15}')]

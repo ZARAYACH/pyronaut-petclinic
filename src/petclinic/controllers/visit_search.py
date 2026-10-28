@@ -1,5 +1,7 @@
 """Visit search HTTP handling."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_ORACLE
+
 from datetime import date
 from typing import Annotated
 from jakarta.inject import Inject
@@ -12,7 +14,7 @@ from petclinic.services.clinic import ClinicService
 
 
 @Controller('/visits')
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 class VisitSearchController:
     clinic_service: Annotated[ClinicService, Inject]
 

@@ -1,5 +1,7 @@
 """Clinics repository contracts and database-specific implementations."""
 
+from petclinic.constants import DEFAULT_DIALECT_PROPERTY, DIALECT_H2, DIALECT_MYSQL, DIALECT_ORACLE, DIALECT_POSTGRES
+
 from typing import Protocol
 from micronaut.data.annotation import Join, Upsert
 from micronaut.data.model.geo import Geometry
@@ -32,7 +34,7 @@ class ClinicServiceOfferingRepository(GenericRepository[ClinicServiceOffering, i
     def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2ClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
 
@@ -54,7 +56,7 @@ class H2ClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol
     def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
 
 
-@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_H2)
 @JdbcRepository(dialect=Dialect.H2)
 class H2ClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
 
@@ -69,7 +71,7 @@ class H2ClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRep
     def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
 
@@ -91,7 +93,7 @@ class OracleClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Prot
     def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
 
 
-@Requires(env=['oracle'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_ORACLE)
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OracleClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
 
@@ -106,7 +108,7 @@ class OracleClinicServiceOfferingRepository(ClinicServiceOfferingRepository, Cru
     def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
 
@@ -128,7 +130,7 @@ class MySqlClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Proto
     def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
 
 
-@Requires(env=['mysql'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_MYSQL)
 @JdbcRepository(dialect=Dialect.MYSQL)
 class MySqlClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
 
@@ -143,7 +145,7 @@ class MySqlClinicServiceOfferingRepository(ClinicServiceOfferingRepository, Crud
     def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
 
@@ -165,7 +167,7 @@ class PostgresClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Pr
     def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
 
 
-@Requires(env=['postgres'])
+@Requires(property=DEFAULT_DIALECT_PROPERTY, value=DIALECT_POSTGRES)
 @JdbcRepository(dialect=Dialect.POSTGRES)
 class PostgresClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
 

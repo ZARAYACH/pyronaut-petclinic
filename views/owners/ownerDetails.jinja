@@ -22,7 +22,7 @@
             <i class="fas fa-arrow-left me-2"></i>{{ msg["owner.backToSearch"]|e }}
         </a>
 
-        {% if activeNames != none and ("oracle" in activeNames) %}
+        {% if oracleEnabled %}
             <ul class="nav nav-tabs mb-4" role="tablist" aria-label="{{ msg["owner.details"]|e }}">
                 <li class="nav-item" role="presentation">
                     <a id="owner-details-tab" class="nav-link active"
@@ -147,7 +147,7 @@
                 </div>
             </div>
         </div>
-        {% if activeNames != none and ("oracle" in activeNames) %}
+        {% if oracleEnabled %}
             <div id="care-record-panel" hidden>
             <div class="mb-4">
                 <h2 class="h3 mb-1">{{ msg["jsonDuality.title"]|e }}</h2>
