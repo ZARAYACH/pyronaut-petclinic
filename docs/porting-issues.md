@@ -18,17 +18,17 @@ Record a reduced reproduction and reconfirm it before opening an upstream issue.
 
 ## Ownership triage (2026-10-28)
 
-All **26 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. This is a source-and-artifact review of the recorded failures and current workarounds, not a new execution of the matrix or confirmation against newer framework releases. No external issues have been filed. Historical details below describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
+All **27 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
 
 | Primary classification | Entries | Meaning |
 | --- | ---: | --- |
-| Framework candidate | 11 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
+| Framework candidate | 12 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
 | Framework improvement | 5 | Interop documentation, diagnostics or capability configuration; no correctness defect established |
 | Application/test | 3 | Open application work or implementation choices still needing verification/workarounds |
 | Reference application | 3 | Java sample behavior or schema; not automatically a Pyronaut issue |
 | Unresolved | 4 | Evidence does not yet distinguish application setup from a library/runtime defect |
 
-Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 11 framework candidates, **10 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 10 proven Pyronaut defects.
+Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 12 framework candidates, **11 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 11 proven Pyronaut defects.
 
 ### Complete disposition
 
@@ -42,7 +42,7 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-015 | Framework improvement | **Validation-path interop API/documentation.** An iterable path becomes a node list, so stringifying it is unsuitable. Document node traversal or offer a path formatter; no validation-engine defect established. |
 | PORT-016 | Framework candidate | **Pyronaut AST / Data metadata integration.** `findField` cannot see a declared Python entity field. Explicit column mappings work; reduce field exposure rather than treating every JSON-view error as application mapping. |
 | PORT-017 | Unresolved | **Oracle JSON / LocalDate compatibility.** The time-bearing Oracle value fails the date-only deserializer. An explicit format fixes it, but the Java/Python behavior under identical mappings has not been isolated; do not assign it to Pyronaut yet. |
-| PORT-018 | Framework candidate | **Pyronaut type-use metadata / Validation (018b).** Correct element-level `@Valid` still fails to cascade. Retain manual traversal and reduce the correctly annotated case. |
+| PORT-018 | Framework candidate | **Pyronaut type-use metadata / Validation (018b).** Element-level `@Valid` did not cascade on SDK 0.0.3 and generates invalid Java constructor annotations on 0.1.1. Omit the unsupported collection annotations and retain manual traversal. |
 | PORT-020 | Framework candidate | **Pyronaut annotation-binding generation.** A generated binding imports an ungenerated transitive annotation module. Explicitly importing both annotations is a workaround, not a normal missing application dependency. |
 | PORT-021 | Framework improvement | **Repository-return interop documentation.** Java mirrors are not Python dataclasses; `dataclasses.replace` is inapplicable. Document construction/enum normalization; native-dataclass ergonomics are a separate enhancement. |
 | PORT-022 | Framework candidate | **Pyronaut HTTP enum conversion.** Lowercase reference inputs fail generated binding. String conversion works. Confirm enum converter registration and Java/Python equivalence before choosing Pyronaut versus Core ownership. |
@@ -60,6 +60,7 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-043 | Unresolved | **Removed fixture experiment.** Its resource lookup failure is historical and not reproducible from the current tree. First establish processed-resource presence and context configuration; no upstream owner assigned. |
 | PORT-045 | Framework candidate | **Mixed:** nullable typed IDs becoming zero (**045a**) warrant a binding/serialization defect investigation; `ForeignNone` identity in object collections (**045b**) is an interop adaptation. Reject malformed inputs before deduplication in our code. |
 | PORT-046 | Framework candidate | **Micronaut Data ETag SQL generation.** Unquoted mapped identifiers break PostgreSQL. Generated lowercase aliases are our workaround; prove the Java control before describing this as Pyronaut-specific. PostgreSQL identifier folding is expected. |
+| PORT-051 | Framework candidate | **Embedded pytest capture on SDK 0.1.1.** Default file-descriptor capture aborts pytest before cases run. Python stream capture permits execution; retain `--capture=sys` in pytest configuration and reduce the runner/filesystem interaction. |
 
 ### Framework defect investigation queue
 
@@ -78,6 +79,7 @@ Priorities below reflect potential impact without our workarounds, not current f
 | 9 | PORT-027b — Pyronaut configuration schema / Test Resources metadata | Strong: working runtime shape is schema-invalid | Submit the same list-of-maps copy configuration to SDK validation and the runtime provider. Attach generated schema and provider contract. Validation must accept the supported shape without suppression; investigate whether schema generation or upstream metadata declares the wrong type. |
 | 10 | PORT-040 — Pyronaut test report producer | Strong: archived XML proves inconsistency | One pass, one skip and a parameterized test. Compare XML attributes with emitted children and parameter IDs. Counts must agree and each parameter case must be identifiable. No database needed. |
 | 11 | PORT-022 — Pyronaut HTTP conversion / Core | Tentative ownership: lowercase binding fails | One enum query route, Python and Java equivalents. Compare uppercase, lowercase, missing and invalid values plus converter registration. Supported lowercase values must bind; invalid values must produce the agreed client-error response. Isolate conversion from our generic HTML handler. |
+| 12 | PORT-051 — Pyronaut embedded pytest / GraalPy filesystem | Strong: unchanged suite fails before execution; stream-capture control passes | One assertion-only test under default capture and `--capture=sys`, with SDK 0.1.1 and matching GraalPy. Preserve the original exception and identify the missing capture path. The default runner must execute ordinary tests or select supported capture automatically. |
 
 File one issue per independently reproducible cause. PORT-035 and PORT-039 are related metadata areas but exhibit distinct compilation and query-specialization failures. Validation-path formatting (PORT-015) and repository/enum mirror handling (PORT-021) are interop improvement requests, not extra constraint or persistence bugs. PORT-027 concerns validation of the correct runtime configuration shape.
 
@@ -180,7 +182,9 @@ For each candidate, record the installed versions above, original failure, small
 ### PORT-018 — Nested collection cascade validation needs an explicit traversal (workaround verified)
 
 - **Observed (PORT-018b):** With the reference's correct element annotations (`list[Annotated[PetCareSubView, Valid]]`), valid nested updates and stale ETAG handling pass, but a blank child name bypasses cascade validation and reaches Oracle, causing `ORA-42692` / `ORA-01407` and HTTP 500.
-- **Workaround (verified):** Retain element annotations and explicitly invoke Jakarta `Validator` on each child bean, prefixing its validation path with the collection index. Valid updates, blank child fields, null child dates and metadata checks passed. Investigate whether generated Python generic argument metadata carries the cascade annotation.
+- **SDK 0.1.1 regression (2026-10-28):** Before the package refactor, the unchanged application fails processing with Core `5.2.19` / Validation `5.2.1`. Generated `PetCareSubView` and `OwnerCareView` constructors put `@ValidatedElement @RequiresValidation` on collection parameters/casts, where those annotations are not applicable. The compiler reports `annotation interface not applicable to this kind of declaration`. This is a generated-code failure, independent of database startup or the refactor.
+- **Current workaround:** Omit element-level `Valid` on `pets` and `visits` and explicitly invoke Jakarta `Validator` on each child bean, prefixing its validation path with the collection index. Child field constraints and object-level metadata validation remain intact. The older manual traversal already covered valid updates, blank child fields, null child dates and metadata checks; the updated SDK is being verified separately.
+- **Evidence:** The unchanged-source compiler dump is preserved locally at `/private/tmp/pyronaut-petclinic-refactor-20261028/__pyronaut__/processor-error-dumps/pyronaut-compiler-error-20261028-124852-290.log`. Reduce constructor annotation propagation on SDK 0.1.1 separately from the older missed-cascade behavior.
 - **Issue disposition:** Element-cascade integration candidate; reduce it using the correct element annotations before filing upstream. The completed annotation-placement correction is excluded from this entry.
 
 ### PORT-020 — Oracle transactional annotation binding omits its required stereotype import
@@ -348,6 +352,13 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 - **Resolution:** `db/postgres/V5__etag_identifier_aliases.sql` adds computed lowercase aliases for first name, last name and the speciality hash. They derive from the canonical columns and cannot be independently changed. The ORM still generates and enforces the ETag predicate; no Python compare-then-write replacement was introduced.
 - **Evidence:** The first corrected PostgreSQL run passed all 84 then-current shared cases, including stale link rollback; final coverage is recorded below. Initial failures are preserved under `__pyronaut__/reports/review-20261026/postgres-initial/`.
 - **Disposition:** Micronaut Data generated ETag transformer/identifier quoting candidate. Reduce on both Java and Python before claiming it is Python-specific.
+
+### PORT-051 — Embedded pytest default capture aborts before test execution
+
+- **Observed (2026-10-28):** The pre-refactor suite on Pyronaut `0.1.1`, Core `5.2.19` and matching GraalPy `25.4.4.1.1` processes successfully after PORT-018's compatibility adaptation, then aborts with `FileNotFoundError: [Errno 2] No such file or directory` through pytest/pluggy. The CLI reports `No tests ran, 82 errors`; these are one runner startup failure, not 82 application defects.
+- **Control:** The same two assertion-only hash tests pass with `PYTEST_ADDOPTS='--capture=sys --full-trace'`; no application/database change is involved.
+- **Workaround:** Configure `[tool.pytest.ini_options] addopts = '--capture=sys'` in `pyproject.toml`. Stream capture retains Python output without pytest's default file-descriptor capture. The missing path and exact runtime ownership still need a minimal reproduction.
+- **Evidence:** Local logs `/private/tmp/pyronaut-refactor-compatibility-h2.log` and `/private/tmp/pyronaut-refactor-runner-probe.log`. No upstream framework code was changed.
 
 ## Latest verification checkpoint
 

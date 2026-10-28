@@ -46,7 +46,7 @@ class PetCareSubView:
     id: Annotated[int, Id, MappedProperty('ID')]
     name: Annotated[str | None, MappedProperty('NAME'), NotBlank]
     birthDate: Annotated[LocalDate | None, MappedProperty('BIRTH_DATE'), NotNull, JsonFormat(pattern="yyyy-MM-dd['T'HH:mm:ss]")]
-    visits: Annotated[list[Annotated[VisitCareSubView, Valid]] | None, MappedProperty('visits'), JoinColumn(name='ID', referencedColumnName='PET_ID'), Relation(Relation.Kind.ONE_TO_MANY)] = field(default_factory=list)
+    visits: Annotated[list[VisitCareSubView] | None, MappedProperty('visits'), JoinColumn(name='ID', referencedColumnName='PET_ID'), Relation(Relation.Kind.ONE_TO_MANY)] = field(default_factory=list)
 
     def __post_init__(self):
         if self.visits is None:
@@ -62,7 +62,7 @@ class OwnerCareView:
     address: Annotated[str | None, MappedProperty('ADDRESS'), NotBlank]
     city: Annotated[str | None, MappedProperty('CITY'), NotBlank]
     telephone: Annotated[str | None, MappedProperty('TELEPHONE'), Pattern(regexp='[0-9]{1,10}', message='The telephone number must contain up to 10 digits.')]
-    pets: Annotated[list[Annotated[PetCareSubView, Valid]] | None, MappedProperty('pets'), JoinColumn(name='ID', referencedColumnName='OWNER_ID'), Relation(Relation.Kind.ONE_TO_MANY)] = field(default_factory=list)
+    pets: Annotated[list[PetCareSubView] | None, MappedProperty('pets'), JoinColumn(name='ID', referencedColumnName='OWNER_ID'), Relation(Relation.Kind.ONE_TO_MANY)] = field(default_factory=list)
     metadata: Annotated[DualityMetadata | None, JsonProperty('_metadata'), NotNull(message='The document must include its _metadata.etag value.'), Valid] = None
 
     def __post_init__(self):
@@ -122,9 +122,9 @@ class OwnerCareRecordController:
     @Put(value='/owners/{ownerId}/care-record', consumes=MediaType.APPLICATION_JSON)
     def update_care_record(self, ownerId: int, document: Annotated[OwnerCareView, Body]):
         violations = sorted(violation_path(v) + ': ' + str(v.getMessage()) for v in self.validator.validate(document))
-        # The current Python integration does not cascade type-use @Valid on list
-        # elements. Keep the same Jakarta constraints and validate each child bean
-        # explicitly until that path is supported by the integration.
+        # Validate collection children explicitly: type-use @Valid did not cascade
+        # on the earlier SDK and produces invalid constructor annotations in 0.1.1.
+        # Each child retains its Jakarta field constraints and indexed error path.
         for pet_index, pet in enumerate(document.pets):
             prefix = 'pets[' + str(pet_index) + ']'
             violations.extend(prefix + '.' + violation_path(v) + ': ' + str(v.getMessage()) for v in self.validator.validate(pet))

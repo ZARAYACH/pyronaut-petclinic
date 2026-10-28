@@ -8,6 +8,10 @@ version = '0.1.0'
 requires = ['setuptools', 'wheel', 'tomli']
 build-backend = 'setuptools.build_meta'
 
+[tool.pytest.ini_options]
+# Embedded GraalPy cannot use pytest's default file-descriptor capture.
+addopts = '--capture=sys'
+
 [tool.setuptools]
 package-dir.'' = 'src'
 packages.find.where = ['src']
