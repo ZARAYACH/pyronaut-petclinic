@@ -9,6 +9,17 @@ import re
 import json
 
 
+def test_priority_page_serves_browser_scripts(client):
+    page = client.get('/oracle/transaction-priority')
+    assert page.status_code == 200, page.text
+    scripts = re.findall(r'<script[^>]+src="(/resources/[^\"]+)"', page.text)
+    assert scripts, 'The priority page must load its browser controls'
+    for path in scripts:
+        script = client.get(path)
+        assert script.status_code == 200, path
+        assert 'javascript' in script.headers['content-type'], path
+
+
 def test_priority_booking_commits_and_reports_taken_appointments(client):
     prefix = '/oracle/transaction-priority'
     page = client.get(prefix, timeout=40)
