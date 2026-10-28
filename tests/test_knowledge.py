@@ -9,7 +9,7 @@ pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only refere
 def test_knowledge_repository_distance_threshold(application_context):
     import java
     from micronaut.data.model.vector.search import Score, ScoringFunction
-    chunks = application_context.java_ctx.getBean(java.type('petclinic.PetCareChunkRepository'))
+    chunks = application_context.java_ctx.getBean(java.type('petclinic.repositories.PetCareChunkRepository'))
     embeddings = application_context.java_ctx.getBean(java.type('petclinic.services.StaticPetCareEmbeddingService'))
     # Any valid query vector must be excluded by a negative cosine distance.
     results = chunks.searchTop5ByEmbeddingNear(

@@ -33,7 +33,7 @@ def test_catalog_accepts_forty_character_service_codes(client, application_conte
         assert rejected.status_code == 400 and 'serviceCode' in rejected.json()['errors']
     finally:
         if id is not None:
-            application_context.java_ctx.getBean(java.type('petclinic.ClinicServiceOfferingRepository')).deleteById(id)
+            application_context.java_ctx.getBean(java.type('petclinic.repositories.ClinicServiceOfferingRepository')).deleteById(id)
 
 
 def test_catalog_description_text_limit_round_trips_unicode(client, application_context):
@@ -50,7 +50,7 @@ def test_catalog_description_text_limit_round_trips_unicode(client, application_
         assert rejected.status_code == 400 and 'description' in rejected.json()['errors']
     finally:
         if id is not None:
-            application_context.java_ctx.getBean(java.type('petclinic.ClinicServiceOfferingRepository')).deleteById(id)
+            application_context.java_ctx.getBean(java.type('petclinic.repositories.ClinicServiceOfferingRepository')).deleteById(id)
 
 
 def test_clinic_catalog_upsert_preserves_identity_and_clinic_scope(client):

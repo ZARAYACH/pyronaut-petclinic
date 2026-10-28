@@ -1,14 +1,9 @@
 """Oracle vector retrieval using the reference's checked-in embedding catalog."""
 
 from dataclasses import dataclass
-from typing import Annotated, Protocol
-from micronaut.context.annotation import Requires
+from typing import Annotated
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, VectorStorage
-from micronaut.data.jdbc.annotation import JdbcRepository
-from micronaut.data.model.query.builder.sql import Dialect
-from micronaut.data.model.vector import FloatVector, Vector
-from micronaut.data.model.vector.search import Score, ScoringFunction, SearchResults
-from micronaut.data.repository import CrudRepository
+from micronaut.data.model.vector import FloatVector
 from micronaut.serde.annotation import Serdeable
 
 
@@ -33,19 +28,6 @@ class PetCareChunk:
     content: Annotated[str, MappedProperty("CONTENT")]
     embedding: Annotated[FloatVector, VectorStorage(length=384), MappedProperty("EMBEDDING")]
     id: Annotated[int | None, Id, GeneratedValue] = None
-
-
-@Requires(env=['oracle'])
-@JdbcRepository(dialect=Dialect.ORACLE)
-class PetCareDocumentRepository(CrudRepository[PetCareDocument, int], Protocol):
-    pass
-
-
-@Requires(env=['oracle'])
-@JdbcRepository(dialect=Dialect.ORACLE)
-class PetCareChunkRepository(CrudRepository[PetCareChunk, int], Protocol):
-    def searchTop5ByEmbeddingNear(self, embedding: Vector, maxDistance: Score,
-                                  scoringFunction: ScoringFunction) -> SearchResults[PetCareChunk]: ...
 
 
 @Serdeable

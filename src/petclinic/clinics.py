@@ -1,12 +1,11 @@
 """Clinic spatial queries and atomic service catalog upserts in Micronaut Data."""
 
 from dataclasses import dataclass, field
-from typing import Annotated, Protocol
+from typing import Annotated
 from jakarta.validation.constraints import DecimalMin, Digits, Min, NotBlank, NotNull, Size
 from java.math import BigDecimal
-from micronaut.data.annotation import GeneratedValue, Id, Index, Join, MappedEntity, MappedProperty, Relation, Srid, Upsert
-from micronaut.data.model.geo import Geometry, Point, Polygon
-from micronaut.data.repository import GenericRepository
+from micronaut.data.annotation import GeneratedValue, Id, Index, MappedEntity, MappedProperty, Relation, Srid
+from micronaut.data.model.geo import Point, Polygon
 from micronaut.serde.annotation import Serdeable
 
 
@@ -35,28 +34,6 @@ class ClinicServiceOffering:
     price: Annotated[BigDecimal, MappedProperty("PRICE")]
     durationMinutes: Annotated[int, MappedProperty("DURATION_MINUTES")]
     id: Annotated[int | None, Id, GeneratedValue] = None
-
-
-class ClinicRepository(GenericRepository[Clinic, int], Protocol):
-    def findOneById(self, id: int) -> Clinic | None: ...
-    def findAllOrderByName(self) -> list[Clinic]: ...
-    def findByLocationNear(self, geometry: Geometry, distance: float) -> list[Clinic]: ...
-    def findByLocationGeoWithin(self, geometry: Geometry) -> list[Clinic]: ...
-    def findByServiceAreaGeoIntersects(self, geometry: Geometry) -> list[Clinic]: ...
-    def findByAcceptingNewPatients(self, acceptingNewPatients: bool) -> list[Clinic]: ...
-    def findByEmergencyService(self, emergencyService: bool) -> list[Clinic]: ...
-    def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
-
-
-class ClinicServiceOfferingRepository(GenericRepository[ClinicServiceOffering, int], Protocol):
-    @Upsert(conflictsOn=["clinic", "serviceCode"])
-    def upsert(self, offering: ClinicServiceOffering) -> ClinicServiceOffering: ...
-
-    @Join(value="clinic", type=Join.Type.FETCH)
-    def findByClinicIdOrderByServiceCode(self, clinicId: int) -> list[ClinicServiceOffering]: ...
-
-    @Join(value="clinic", type=Join.Type.FETCH)
-    def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
 
 
 @Serdeable

@@ -5,7 +5,8 @@ from typing import Annotated
 from jakarta.inject import Inject, Singleton
 from micronaut.context.annotation import Requires, Value
 from micronaut.transaction.annotation import OracleTransactional, Transactional
-from petclinic.transaction_priority import AppointmentStatus, Appointment, AppointmentRepository, BookingTaken, status_name, with_status
+from petclinic.transaction_priority import AppointmentStatus, Appointment, BookingTaken, status_name, with_status
+from petclinic.repositories.appointments import AppointmentRepository
 
 
 @Singleton

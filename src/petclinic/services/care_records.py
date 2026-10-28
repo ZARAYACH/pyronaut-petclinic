@@ -3,7 +3,8 @@
 from typing import Annotated
 from jakarta.inject import Inject, Singleton
 from micronaut.context.annotation import Requires
-from petclinic.care_records import OwnerCareView, OwnerCareViewRepository
+from petclinic.care_records import OwnerCareView
+from petclinic.repositories.care_records import OwnerCareViewRepository
 
 
 @Requires(env=['oracle'])

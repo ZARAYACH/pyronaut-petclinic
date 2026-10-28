@@ -1,17 +1,13 @@
 """Oracle JSON duality documents for the existing owner, pet, and visit tables."""
 
 from dataclasses import dataclass, field
-from typing import Annotated, Protocol
+from typing import Annotated
 from com.fasterxml.jackson.annotation import JsonFormat, JsonProperty
 from jakarta.validation import Valid
 from jakarta.validation.constraints import NotBlank, NotNull, Pattern
 from java.time import LocalDate
-from micronaut.context.annotation import Requires
 from micronaut.data.annotation import Id, JsonSubView, JsonView, MappedProperty, Relation
 from micronaut.data.annotation.sql import JoinColumn
-from micronaut.data.jdbc.annotation import JdbcRepository
-from micronaut.data.model.query.builder.sql import Dialect
-from micronaut.data.repository import CrudRepository
 from micronaut.serde.annotation import Serdeable
 from petclinic.entities import Owner, Pet, Visit
 
@@ -59,9 +55,3 @@ class OwnerCareView:
     def __post_init__(self):
         if self.pets is None:
             self.pets = []
-
-
-@Requires(env=['oracle'])
-@JdbcRepository(dialect=Dialect.ORACLE)
-class OwnerCareViewRepository(CrudRepository[OwnerCareView, int], Protocol):
-    def findOneById(self, id: int) -> OwnerCareView | None: ...

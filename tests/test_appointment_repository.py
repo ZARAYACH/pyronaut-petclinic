@@ -7,7 +7,7 @@ from petclinic.transaction_priority import status_name
 @pytest.fixture
 def appointments(application_context):
     import java
-    repository = application_context.java_ctx.getBean(java.type('petclinic.AppointmentRepository'))
+    repository = application_context.java_ctx.getBean(java.type('petclinic.repositories.AppointmentRepository'))
     Appointment = java.type('petclinic.Appointment')
     Status = java.type('petclinic.AppointmentStatus')
     created = []

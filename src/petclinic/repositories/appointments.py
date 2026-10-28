@@ -1,13 +1,22 @@
 """Appointments repository contracts and database-specific implementations."""
 
 from typing import Protocol
-from micronaut.context.annotation import Requires
 from micronaut.data.annotation import Query
+from micronaut.data.repository import GenericRepository, CrudRepository
+from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
-from micronaut.data.repository import CrudRepository
-from ..transaction_priority import Appointment
-from ..transaction_priority import AppointmentRepository
+from petclinic.transaction_priority import Appointment
+
+
+class AppointmentRepository(GenericRepository[Appointment, int], Protocol):
+    @Query(value='SELECT a.* FROM APPOINTMENTS a WHERE a.ID = :appointmentId FOR UPDATE WAIT 10', nativeQuery=True)
+    def findByIdForUpdate(self, appointmentId: int) -> Appointment | None: ...
+
+    @Query(value="SELECT a.* FROM APPOINTMENTS a WHERE STATUS = 'AVAILABLE' ORDER BY DISPLAY_ORDER, ID", nativeQuery=True)
+    def findAvailableAppointments(self) -> list[Appointment]: ...
+
+    def findOneById(self, id: int) -> Appointment | None: ...
 
 
 @Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])

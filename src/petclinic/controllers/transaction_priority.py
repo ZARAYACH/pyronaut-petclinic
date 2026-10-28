@@ -12,7 +12,8 @@ from micronaut.http.exceptions import HttpStatusException
 from micronaut.scheduling.annotation import ExecuteOn
 from micronaut.transaction.exceptions import OracleTransactionPriorityException, TransactionTimedOutException
 from micronaut.views import View
-from petclinic.transaction_priority import AppointmentStatus, BookingType, BookingOutcome, AppointmentRepository, BookingTaken, status_name, with_status, OracleBookingResult
+from petclinic.transaction_priority import AppointmentStatus, BookingType, BookingOutcome, BookingTaken, status_name, with_status, OracleBookingResult
+from petclinic.repositories.appointments import AppointmentRepository
 from petclinic.services.transaction_priority import OracleTransactionPriorityService
 
 

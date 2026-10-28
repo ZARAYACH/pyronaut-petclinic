@@ -2,10 +2,9 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Annotated, Protocol
+from typing import Annotated
 from jakarta.validation.constraints import NotBlank, NotNull
-from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Query
-from micronaut.data.repository import GenericRepository
+from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty
 from micronaut.serde.annotation import Serdeable
 
 
@@ -37,16 +36,6 @@ class Appointment:
     displayOrder: Annotated[int, NotNull, MappedProperty("DISPLAY_ORDER")]
     status: Annotated[AppointmentStatus, NotNull, MappedProperty("STATUS")] = AppointmentStatus.AVAILABLE
     id: Annotated[int | None, Id, GeneratedValue] = None
-
-
-class AppointmentRepository(GenericRepository[Appointment, int], Protocol):
-    @Query(value='SELECT a.* FROM APPOINTMENTS a WHERE a.ID = :appointmentId FOR UPDATE WAIT 10', nativeQuery=True)
-    def findByIdForUpdate(self, appointmentId: int) -> Appointment | None: ...
-
-    @Query(value="SELECT a.* FROM APPOINTMENTS a WHERE STATUS = 'AVAILABLE' ORDER BY DISPLAY_ORDER, ID", nativeQuery=True)
-    def findAvailableAppointments(self) -> list[Appointment]: ...
-
-    def findOneById(self, id: int) -> Appointment | None: ...
 
 
 class BookingTaken(RuntimeError):
