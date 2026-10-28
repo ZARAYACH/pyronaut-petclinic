@@ -7,6 +7,7 @@ pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only refere
 
 import re
 import json
+from html import unescape
 
 
 def test_priority_page_serves_browser_scripts(client):
@@ -18,6 +19,34 @@ def test_priority_page_serves_browser_scripts(client):
         script = client.get(path)
         assert script.status_code == 200, path
         assert 'javascript' in script.headers['content-type'], path
+
+
+@pytest.mark.parametrize('language,committed', [
+    ('en', 'Booking committed.'),
+    ('es', 'Reserva confirmada.'),
+    ('de', 'Buchung festgeschrieben.'),
+])
+def test_priority_page_supplies_localized_booking_statuses(client, language, committed):
+    client.get('/locale', params={'lang': language}, allow_redirects=False)
+    try:
+        page = client.get('/oracle/transaction-priority')
+        assert page.status_code == 200, page.text
+        assert '<html lang="' + language + '">' in page.text, language
+        labels = {key: unescape(value).strip() for key, value in
+                  re.findall(r'<span data-key="([^\"]+)">([^<]*)</span>', page.text)}
+        expected = {
+            'error', 'noAvailable', 'ready', 'confirmed', 'emergencyPending',
+            'emergencyWon', 'regularWon', 'taken', 'working', 'timedOut',
+            'countdown', 'completing', 'finished', 'outcome.NOT_STARTED',
+            'outcome.RUNNING', 'outcome.COMMITTED', 'outcome.PRIORITY_ROLLED_BACK',
+            'outcome.TAKEN', 'outcome.TIMED_OUT', 'outcome.FAILED',
+        }
+        assert labels.keys() == expected
+        for key, value in labels.items():
+            assert value and not value.startswith('transactionPriority.'), (language, key, value)
+        assert labels['outcome.COMMITTED'] == committed, (language, labels['outcome.COMMITTED'])
+    finally:
+        client.get('/locale', params={'lang': 'en'}, allow_redirects=False)
 
 
 def test_priority_booking_commits_and_reports_taken_appointments(client):
