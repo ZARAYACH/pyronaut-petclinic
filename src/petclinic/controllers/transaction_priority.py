@@ -1,6 +1,7 @@
 """Transaction priority HTTP handling."""
 
 import logging
+import java
 from typing import Annotated
 from jakarta.inject import Inject
 from java.lang import RuntimeException
@@ -28,6 +29,9 @@ def appointment_model(appointment) -> dict:
 def booking_outcome(error) -> BookingOutcome:
     if isinstance(error, OracleTransactionPriorityException):
         return BookingOutcome.PRIORITY_ROLLED_BACK
+    # A service exception can cross the AOP/context boundary as its Java mirror.
+    if isinstance(error, java.type('petclinic.BookingTaken')):
+        return BookingOutcome.TAKEN
     if isinstance(error, BookingTaken):
         return BookingOutcome.TAKEN
     if isinstance(error, TransactionTimedOutException):
