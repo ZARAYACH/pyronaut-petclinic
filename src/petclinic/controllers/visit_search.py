@@ -1,16 +1,15 @@
-"""Oracle interval queries compiled by Micronaut Data from Python method names."""
+"""Visit search HTTP handling."""
 
 from datetime import date
 from typing import Annotated
-
 from jakarta.inject import Inject
 from micronaut.context.annotation import Requires
 from java.time import LocalDate
 from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Controller, Get, Produces, QueryValue
 from micronaut.views import View
-
 from petclinic.services.clinic import ClinicService
+
 
 @Controller('/visits')
 @Requires(env=['oracle'])

@@ -33,7 +33,7 @@ def test_missing_clinic_json_save_returns_domain_error(client):
 def test_duality_rejection_checks_nested_and_chained_sql_errors():
     from java.sql import SQLException
     from micronaut.data.exceptions import DataAccessException
-    from petclinic.care_records import disallowed_operation
+    from petclinic.controllers.care_records import disallowed_operation
     chained = SQLException('outer SQL failure', 'state', 0)
     chained.setNextException(SQLException('disallowed duality operation', 'state', 40937))
     assert disallowed_operation(DataAccessException('wrapped', chained))

@@ -7,7 +7,7 @@ from petclinic_test_support import DATABASE
 def test_clinic_repository_saves_geometry_and_reads_it_back(application_context):
     import java
     from micronaut.data.model.geo import Point
-    from petclinic.clinics import _polygon
+    from petclinic.controllers.clinics import _polygon
     repository = application_context.java_ctx.getBean(java.type('petclinic.ClinicRepository'))
     Clinic = java.type('petclinic.Clinic')
     point = Point(-89.3838, 43.0748)

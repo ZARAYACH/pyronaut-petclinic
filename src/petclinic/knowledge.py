@@ -6,7 +6,6 @@ import struct
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Annotated, Protocol
-
 from jakarta.inject import Inject, Singleton
 from jakarta.transaction import Transactional
 from micronaut.context.annotation import Factory, Requires
@@ -17,12 +16,8 @@ from micronaut.data.model.query.builder.sql import Dialect
 from micronaut.data.model.vector import FloatVector, Vector
 from micronaut.data.model.vector.search import Score, ScoringFunction, SearchResults
 from micronaut.data.repository import CrudRepository
-from micronaut.http import MediaType
-from micronaut.http.annotation import Body, Controller, Get, Post, Produces, QueryValue
 from micronaut.serde.annotation import Serdeable
-from micronaut.views import View
-
-from .resources import ApplicationResources
+from petclinic.resources import ApplicationResources
 
 
 @MappedEntity('PET_CARE_DOCUMENTS')
@@ -149,21 +144,3 @@ class PetCareKnowledgeLoader:
 @dataclass
 class PetCareSearchRequest:
     query: str
-
-
-@Controller('/knowledge')
-@Requires(env=['oracle'])
-class PetCareKnowledgeController:
-    knowledge: Annotated[PetCareKnowledgeService, Inject]
-
-
-    @Get
-    @View('knowledge/search')
-    def knowledge_page(self, query: Annotated[str, QueryValue(defaultValue='')] = '') -> dict:
-        return {'query': query, 'results': self.knowledge.search(query), 'dimensions': 384}
-
-
-    @Post(value='/search', consumes=MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    def search_knowledge(self, request: Annotated[PetCareSearchRequest, Body]):
-        return self.knowledge.search(request.query)
