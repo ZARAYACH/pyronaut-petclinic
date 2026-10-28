@@ -10,7 +10,7 @@ from micronaut.http import HttpResponse, MediaType
 from micronaut.http.annotation import Controller, Get, Produces, QueryValue
 from micronaut.views import View
 
-from .services import ClinicService
+from petclinic.services.clinic import ClinicService
 
 @Controller('/visits')
 @Requires(env=['oracle'])

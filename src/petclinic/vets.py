@@ -18,8 +18,10 @@ from micronaut.views import View
 
 from .entities import Speciality, Vet
 from .etags import speciality_hash
-from .repositories import SpecialityRepository, VetRepository, VetSpecialityRepository
-from .services import vet_view_models
+from .repositories.vets import SpecialityRepository
+from .repositories.vets import VetRepository
+from .repositories.vets import VetSpecialityRepository
+from petclinic.services.view_models import vet_view_models
 
 
 def domain_error(status: HttpStatus, message: str):

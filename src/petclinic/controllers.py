@@ -30,7 +30,8 @@ from micronaut.views import View
 
 from .forms import OwnerForm, PetForm, VisitForm, VisitRequest
 from .mapper import FormMapper
-from .services import ClinicService, owner_search_model, owner_view_model, pet_view_model
+from petclinic.services.clinic import ClinicService
+from petclinic.services.view_models import owner_search_model, owner_view_model, pet_view_model
 from .validation import violation_field
 from .errors import entity_not_found
 

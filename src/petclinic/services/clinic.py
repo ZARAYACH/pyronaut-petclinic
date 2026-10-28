@@ -1,33 +1,16 @@
-"""Application service layer.
+"""Shared PetClinic service facade and veterinarian aggregate decoding."""
 
-``ClinicService`` is a Micronaut bean that coordinates repository calls and
-contains workflow-oriented operations used by the controllers. Keeping these
-operations in a service demonstrates normal Micronaut dependency injection in
-Python and keeps route handlers small.
-
-The bean is ``@Singleton``, matching the reference service. Micronaut injects the
-repository fields based on the ``Annotated[..., Inject]``
-declarations.
-"""
-
-from datetime import timedelta
 from typing import Annotated
-
 from java.time import Duration, LocalDate, Period
-
 from jakarta.inject import Inject, Singleton
 from jakarta.transaction import Transactional
 from micronaut.cache.annotation import Cacheable
-
-from .entities import Owner, Pet, PetType, Speciality, Vet, Visit
-from .repositories import (
-    OwnerRepository,
-    PetRepository,
-    PetTypeRepository,
-    SpecialityRepository,
-    VetRepository,
-    VisitRepository,
-)
+from petclinic.entities import Owner, Pet, PetType, Speciality, Vet, Visit
+from petclinic.repositories.owners import OwnerRepository
+from petclinic.repositories.pets import PetRepository, PetTypeRepository
+from petclinic.repositories.vets import SpecialityRepository, VetRepository
+from petclinic.repositories.visits import VisitRepository
+from petclinic.services.durations import duration_minutes
 
 
 @Singleton
@@ -136,14 +119,6 @@ class ClinicService:
         return self.speciality_repository.findOneById(speciality_id)
 
 
-def duration_minutes(value) -> int:
-    """GraalPy exposes Java durations as Python timedeltas when loading entities."""
-
-    if isinstance(value, timedelta):
-        return value // timedelta(minutes=1)
-    return value.toMinutes()
-
-
 def _parse_speciality_rows(value: str | None) -> list[dict]:
     """Decode ``LISTAGG`` speciality rows from the vet aggregate query."""
 
@@ -158,50 +133,3 @@ def _parse_speciality_rows(value: str | None) -> list[dict]:
             continue
         specialities.append({"id": int(speciality_id), "name": name})
     return specialities
-
-
-def vet_view_models(vets: list[Vet]) -> list[dict]:
-    """Adapt the cached service entities for the translated veterinarian view."""
-
-    models = []
-    for vet in vets:
-        specialities = [{'id': s.id, 'name': s.name} for s in sorted(vet.specialities, key=lambda s: s.name)]
-        models.append({'id': vet.id, 'firstName': vet.firstName, 'lastName': vet.lastName,
-                       'specialities': specialities,
-                       'specialitiesAsString': ', '.join(s['name'] for s in specialities) if specialities else 'none'})
-    return models
-
-
-def pet_view_model(pet: Pet) -> dict:
-    pet_type = pet.type.name if pet.type is not None else ''
-    return {
-        'id': pet.id, 'name': pet.name, 'birthDate': str(pet.birthDate or ''),
-        'type': {'name': pet_type} if pet.type is not None else None,
-        'typeClass': pet_type.strip().lower() or 'dog',
-        'icon': {'cat': 'fa-cat', 'bird': 'fa-dove', 'hamster': 'fa-hippo', 'snake': 'fa-worm'}.get(pet_type.strip().lower(), 'fa-dog'),
-        'visits': [{'id': v.id, 'date': str(v.date or ''), 'description': v.description,
-                    'durationInMinutes': duration_minutes(v.duration) if v.duration is not None else None,
-                    'periodInMonths': v.period.toTotalMonths() if v.period is not None else None}
-                   for v in sorted(pet.visits, key=lambda visit: str(visit.date))],
-    }
-
-
-def owner_view_model(owner: Owner) -> dict:
-    return {'id': owner.id, 'firstName': owner.firstName, 'lastName': owner.lastName,
-            'address': owner.address, 'city': owner.city, 'telephone': owner.telephone,
-            'pets': [pet_view_model(pet) for pet in owner.pets]}
-
-
-def owner_search_model(owner: Owner) -> dict:
-    """Match the reference's non-recursive owner search JSON representation."""
-
-    result = {'id': owner.id, 'firstName': owner.firstName, 'lastName': owner.lastName,
-              'address': owner.address, 'city': owner.city, 'telephone': owner.telephone}
-    pets = []
-    for pet in owner.pets:
-        pets.append({'id': pet.id, 'name': pet.name, 'birthDate': str(pet.birthDate),
-                     'type': {'id': pet.type.id, 'name': pet.type.name},
-                     'owner': dict(result)})
-    if pets:
-        result['pets'] = pets
-    return result

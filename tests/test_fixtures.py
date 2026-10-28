@@ -8,6 +8,6 @@ import pytest
     (12, 'Lucky', '2010-06-24'), (13, 'Sly', '2012-06-08')])
 def test_canonical_pet_birth_dates(application_context, id, name, birth_date):
     import java
-    pets = application_context.java_ctx.getBean(java.type('petclinic.PetRepository'))
+    pets = application_context.java_ctx.getBean(java.type('petclinic.repositories.PetRepository'))
     pet = pets.findOneById(id)
     assert pet.name == name and str(pet.birthDate) == birth_date

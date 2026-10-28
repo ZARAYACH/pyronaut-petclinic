@@ -34,7 +34,7 @@ def test_vet_cache_reuses_values_until_invalidation(client, application_context)
     original = None
     try:
         cache.invalidateAll()
-        service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
+        service = application_context.java_ctx.getBean(java.type('petclinic.services.ClinicService'))
         warm = service.find_all_vets()
         original = next(vet.lastName for vet in warm if vet.id == 1)
         update.setString(1, 'CacheProbe')

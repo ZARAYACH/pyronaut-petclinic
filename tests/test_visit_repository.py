@@ -10,11 +10,11 @@ pytestmark = pytest.mark.skipif(DATABASE != 'oracle', reason='Oracle-only refere
 @pytest.fixture
 def visit_repository(application_context):
     import java
-    return application_context.java_ctx.getBean(java.type('petclinic.VisitRepository'))
+    return application_context.java_ctx.getBean(java.type('petclinic.repositories.VisitRepository'))
 
 
 def test_visit_interval_repository_reads_values(visit_repository):
-    from petclinic.services import duration_minutes
+    from petclinic.services.durations import duration_minutes
     visits = visit_repository.findByPetName('Samantha')
     assert [duration_minutes(v.duration) for v in visits] == [60, 30]
     assert [v.period.toTotalMonths() for v in visits] == [12, 6]
@@ -30,7 +30,7 @@ def test_visit_interval_repository_reads_values(visit_repository):
 ])
 def test_visit_interval_repository_bounds(visit_repository, method, bound, inclusive, greater):
     from java.time import Duration, Period
-    from petclinic.services import duration_minutes
+    from petclinic.services.durations import duration_minutes
     duration = 'Duration' in method
     limit = Duration.ofMinutes(bound) if duration else Period.ofMonths(bound).normalized()
     visits = getattr(visit_repository, method)(limit)
@@ -45,7 +45,7 @@ def test_visit_interval_repository_bounds(visit_repository, method, bound, inclu
 
 def test_visit_interval_repository_combined_bounds(visit_repository):
     from java.time import Duration, LocalDate, Period
-    from petclinic.services import duration_minutes
+    from petclinic.services.durations import duration_minutes
     visits = visit_repository.findByDateBetweenAndDurationLessThanEqualsAndPeriodLessThanEquals(
         LocalDate.parse('2017-01-01'), LocalDate.parse('2020-12-31'),
         Duration.ofMinutes(90), Period.ofMonths(18).normalized())

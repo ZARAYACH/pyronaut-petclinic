@@ -65,12 +65,12 @@ class VetApi:
 
     def cleanup(self):
         import java
-        repository = self.context.java_ctx.getBean(java.type('petclinic.VetRepository'))
+        repository = self.context.java_ctx.getBean(java.type('petclinic.repositories.VetRepository'))
         for id in self.vets:
             row = repository.findOneById(id)
             if row is not None:
                 repository.deleteSpecialityLinks(id)
                 repository.delete(row)
-        specialities = self.context.java_ctx.getBean(java.type('petclinic.SpecialityRepository'))
+        specialities = self.context.java_ctx.getBean(java.type('petclinic.repositories.SpecialityRepository'))
         for id in self.specialities:
             specialities.deleteById(id)

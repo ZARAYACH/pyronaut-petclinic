@@ -6,7 +6,7 @@ import re
 def test_reference_service_lookup_operations(client, application_context):
     import java
 
-    service = application_context.java_ctx.getBean(java.type('petclinic.ClinicService'))
+    service = application_context.java_ctx.getBean(java.type('petclinic.services.ClinicService'))
     assert len(service.find_all_pets()) >= 13
     visit = service.find_visits_by_pet_id(1)[0]
     assert service.find_visit_by_id(visit.id).id == visit.id
@@ -18,7 +18,7 @@ def test_reference_service_lookup_operations(client, application_context):
     vets = service.find_all_vets()
     douglas = next(vet for vet in vets if vet.lastName == 'Douglas')
     assert sorted(s.name for s in douglas.specialities) == ['dentistry', 'surgery']
-    joins = application_context.java_ctx.getBean(java.type('petclinic.VetSpecialityRepository'))
+    joins = application_context.java_ctx.getBean(java.type('petclinic.repositories.VetSpecialityRepository'))
     assert sorted(s.name for s in joins.findSpecialitiesByVetId(douglas.id)) == ['dentistry', 'surgery']
 
     owner = client.post('/owners/new', data={'firstName': 'Service', 'lastName': 'Facade',

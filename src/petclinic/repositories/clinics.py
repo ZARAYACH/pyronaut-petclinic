@@ -1,0 +1,162 @@
+"""Clinics repository contracts and database-specific implementations."""
+
+from typing import Protocol
+from micronaut.context.annotation import Requires
+from micronaut.data.annotation import Join
+from micronaut.data.annotation import Upsert
+from micronaut.data.model.geo import Geometry
+from micronaut.data.jdbc.annotation import JdbcRepository
+from micronaut.data.model.query.builder.sql import Dialect
+from micronaut.data.repository import CrudRepository
+from ..clinics import Clinic
+from ..clinics import ClinicServiceOffering
+from ..clinics import ClinicRepository
+from ..clinics import ClinicServiceOfferingRepository
+
+
+@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@JdbcRepository(dialect=Dialect.H2)
+class H2ClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
+
+
+    def findOneById(self, id: int) -> Clinic | None: ...
+
+    def findAllOrderByName(self) -> list[Clinic]: ...
+
+    def findByLocationNear(self, geometry: Geometry, distance: float) -> list[Clinic]: ...
+
+    def findByLocationGeoWithin(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByServiceAreaGeoIntersects(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatients(self, acceptingNewPatients: bool) -> list[Clinic]: ...
+
+    def findByEmergencyService(self, emergencyService: bool) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
+
+
+@Requires(notEnv=['mysql', 'postgres', 'oracle', 'oracle-deepsec'])
+@JdbcRepository(dialect=Dialect.H2)
+class H2ClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
+
+
+    @Upsert(conflictsOn=["clinic", "serviceCode"])
+    def upsert(self, offering: ClinicServiceOffering) -> ClinicServiceOffering: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdOrderByServiceCode(self, clinicId: int) -> list[ClinicServiceOffering]: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
+
+
+@Requires(env=['oracle'])
+@JdbcRepository(dialect=Dialect.ORACLE)
+class OracleClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
+
+
+    def findOneById(self, id: int) -> Clinic | None: ...
+
+    def findAllOrderByName(self) -> list[Clinic]: ...
+
+    def findByLocationNear(self, geometry: Geometry, distance: float) -> list[Clinic]: ...
+
+    def findByLocationGeoWithin(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByServiceAreaGeoIntersects(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatients(self, acceptingNewPatients: bool) -> list[Clinic]: ...
+
+    def findByEmergencyService(self, emergencyService: bool) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
+
+
+@Requires(env=['oracle'])
+@JdbcRepository(dialect=Dialect.ORACLE)
+class OracleClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
+
+
+    @Upsert(conflictsOn=["clinic", "serviceCode"])
+    def upsert(self, offering: ClinicServiceOffering) -> ClinicServiceOffering: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdOrderByServiceCode(self, clinicId: int) -> list[ClinicServiceOffering]: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
+
+
+@Requires(env=['mysql'])
+@JdbcRepository(dialect=Dialect.MYSQL)
+class MySqlClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
+
+
+    def findOneById(self, id: int) -> Clinic | None: ...
+
+    def findAllOrderByName(self) -> list[Clinic]: ...
+
+    def findByLocationNear(self, geometry: Geometry, distance: float) -> list[Clinic]: ...
+
+    def findByLocationGeoWithin(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByServiceAreaGeoIntersects(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatients(self, acceptingNewPatients: bool) -> list[Clinic]: ...
+
+    def findByEmergencyService(self, emergencyService: bool) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
+
+
+@Requires(env=['mysql'])
+@JdbcRepository(dialect=Dialect.MYSQL)
+class MySqlClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
+
+
+    @Upsert(conflictsOn=["clinic", "serviceCode"])
+    def upsert(self, offering: ClinicServiceOffering) -> ClinicServiceOffering: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdOrderByServiceCode(self, clinicId: int) -> list[ClinicServiceOffering]: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
+
+
+@Requires(env=['postgres'])
+@JdbcRepository(dialect=Dialect.POSTGRES)
+class PostgresClinicRepository(ClinicRepository, CrudRepository[Clinic, int], Protocol):
+
+
+    def findOneById(self, id: int) -> Clinic | None: ...
+
+    def findAllOrderByName(self) -> list[Clinic]: ...
+
+    def findByLocationNear(self, geometry: Geometry, distance: float) -> list[Clinic]: ...
+
+    def findByLocationGeoWithin(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByServiceAreaGeoIntersects(self, geometry: Geometry) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatients(self, acceptingNewPatients: bool) -> list[Clinic]: ...
+
+    def findByEmergencyService(self, emergencyService: bool) -> list[Clinic]: ...
+
+    def findByAcceptingNewPatientsAndEmergencyService(self, acceptingNewPatients: bool, emergencyService: bool) -> list[Clinic]: ...
+
+
+@Requires(env=['postgres'])
+@JdbcRepository(dialect=Dialect.POSTGRES)
+class PostgresClinicServiceOfferingRepository(ClinicServiceOfferingRepository, CrudRepository[ClinicServiceOffering, int], Protocol):
+
+
+    @Upsert(conflictsOn=["clinic", "serviceCode"])
+    def upsert(self, offering: ClinicServiceOffering) -> ClinicServiceOffering: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdOrderByServiceCode(self, clinicId: int) -> list[ClinicServiceOffering]: ...
+
+    @Join(value="clinic", type=Join.Type.FETCH)
+    def findByClinicIdAndServiceCode(self, clinicId: int, serviceCode: str) -> ClinicServiceOffering | None: ...
