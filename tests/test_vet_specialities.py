@@ -60,3 +60,12 @@ def test_vet_speciality_rejects_mismatched_and_missing_ids(client, vet_api):
                                 json={'id': 2147483647, 'name': 'Mismatch'}), 400)
     assert_json_error(client.put('/vets/specialities/2147483647', json={'name': 'Missing'}), 404)
     assert speciality in client.get('/vets/specialities/json').json()
+
+
+def test_vet_speciality_unicode_name_text_limit(client, vet_api):
+    response = client.post('/vets/specialities', json={'name': 'ñ' * 255})
+    assert response.status_code == 201, response.text
+    record = response.json()
+    vet_api.specialities.append(record['id'])
+    assert record['name'] == 'ñ' * 255
+    assert record in client.get('/vets/specialities/json').json()
