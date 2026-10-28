@@ -10,7 +10,8 @@ from micronaut.http.server.exceptions import NotFoundException
 from micronaut.scheduling.annotation import ExecuteOn
 from micronaut.views import View
 from petclinic.services.view_models import vet_view_models
-from petclinic.vets import domain_error, VetForm, SpecialityForm, VetService
+from petclinic.services.vets import domain_error, VetService
+from petclinic.vets import VetForm, SpecialityForm
 
 
 def speciality_model(speciality) -> dict:

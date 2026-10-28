@@ -12,7 +12,8 @@ from micronaut.views import View
 from micronaut.http.server.exceptions import NotFoundException
 from petclinic.validation import violation_field
 from petclinic.errors import entity_not_found
-from petclinic.clinics import Clinic, ClinicServiceOffering, ClinicNearbyRequest, ClinicCoordinatesRequest, ClinicServiceOfferingForm, ClinicServiceOfferingResponse, ClinicBranchService
+from petclinic.clinics import Clinic, ClinicServiceOffering, ClinicNearbyRequest, ClinicCoordinatesRequest, ClinicServiceOfferingForm, ClinicServiceOfferingResponse
+from petclinic.services.clinics import ClinicBranchService
 
 
 branch_service: Annotated[ClinicBranchService, Inject]

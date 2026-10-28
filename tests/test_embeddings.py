@@ -16,7 +16,7 @@ def resources(application_context):
 
 @pytest.fixture
 def embedding_service(resources):
-    from petclinic.knowledge import StaticPetCareEmbeddingService
+    from petclinic.services.embeddings import StaticPetCareEmbeddingService
     service = StaticPetCareEmbeddingService()
     service.resources = resources
     return service

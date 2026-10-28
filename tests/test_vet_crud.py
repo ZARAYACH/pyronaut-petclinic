@@ -166,9 +166,6 @@ def test_vet_crud_listing_order_and_private_hash(client):
     assert all(set(v) == {'id', 'firstName', 'lastName', 'specialities', 'etag'} and v['etag'] for v in vets)
     assert 'specialitiesHash' not in response.text and 'SPECIALITIES_ETAG_HASH' not in response.text
 
-
-
-
 def test_vet_crud_rejects_malformed_json_and_invalid_path(client):
     malformed = client.post('/vets/specialities', data='{"name":', headers={'Content-Type': 'application/json'})
     assert_json_error(malformed, 400)

@@ -6,7 +6,8 @@ from micronaut.context.annotation import Requires
 from micronaut.http import MediaType
 from micronaut.http.annotation import Body, Controller, Get, Post, Produces, QueryValue
 from micronaut.views import View
-from petclinic.knowledge import PetCareKnowledgeService, PetCareSearchRequest
+from petclinic.services.knowledge import PetCareKnowledgeService
+from petclinic.knowledge import PetCareSearchRequest
 
 
 @Controller('/knowledge')

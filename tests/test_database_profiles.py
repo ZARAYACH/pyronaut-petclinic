@@ -19,4 +19,4 @@ def test_database_profile_and_oracle_feature_gates(client, application_context):
                      '/knowledge', '/owners/1/care-record', '/oracle/transaction-priority'):
             assert client.get(path).status_code == 404, path
         for name in ('PetCareKnowledgeService', 'OwnerCareViewService', 'OracleTransactionPriorityService'):
-            assert not application_context.java_ctx.containsBean(java.type('petclinic.' + name))
+            assert not application_context.java_ctx.containsBean(java.type('petclinic.services.' + name))

@@ -1,16 +1,12 @@
 """Oracle's competing LOW and HIGH appointment transactions from the reference."""
 
-import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Annotated, Protocol
-from jakarta.inject import Inject, Singleton
 from jakarta.validation.constraints import NotBlank, NotNull
-from micronaut.context.annotation import Requires, Value
 from micronaut.data.annotation import GeneratedValue, Id, MappedEntity, MappedProperty, Query
 from micronaut.data.repository import GenericRepository
 from micronaut.serde.annotation import Serdeable
-from micronaut.transaction.annotation import OracleTransactional, Transactional
 
 
 class AppointmentStatus(Enum):
@@ -68,39 +64,6 @@ def with_status(appointment, status: AppointmentStatus) -> Appointment:
     # Repository results may be Java mirrors rather than native dataclasses.
     return Appointment(label=appointment.label, displayOrder=appointment.displayOrder,
                        status=status, id=appointment.id)
-
-
-@Singleton
-@Requires(env=['oracle'])
-class OracleTransactionPriorityService:
-    appointments: Annotated[AppointmentRepository, Inject]
-    reservationSeconds: Annotated[int, Value('${petclinic.transaction-priority.reservation-seconds:15}')]
-
-    def get_reservation_seconds(self) -> int:
-        return self.reservationSeconds
-
-    def lock_available(self, appointment_id: int) -> Appointment:
-        appointment = self.appointments.findByIdForUpdate(appointment_id)
-        if appointment is None or status_name(appointment.status) != 'AVAILABLE':
-            raise BookingTaken('The appointment has already been booked')
-        return appointment
-
-    @OracleTransactional(priority=OracleTransactional.Priority.LOW, timeout=30)
-    def book_regular(self, appointment_id: int) -> None:
-        appointment = self.lock_available(appointment_id)
-        appointment = self.appointments.save(with_status(appointment, AppointmentStatus.HELD_BY_REGULAR))
-        time.sleep(self.reservationSeconds)
-        self.appointments.save(with_status(appointment, AppointmentStatus.BOOKED_FOR_REGULAR))
-
-    @OracleTransactional(priority=OracleTransactional.Priority.HIGH, timeout=30)
-    def book_emergency(self, appointment_id: int) -> None:
-        appointment = self.lock_available(appointment_id)
-        self.appointments.save(with_status(appointment, AppointmentStatus.BOOKED_FOR_EMERGENCY))
-
-    @Transactional
-    def reset_fixture(self) -> None:
-        for appointment in self.appointments.findAll():
-            self.appointments.save(with_status(appointment, AppointmentStatus.AVAILABLE))
 
 
 @Serdeable

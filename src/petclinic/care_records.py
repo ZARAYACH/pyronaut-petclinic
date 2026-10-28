@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from typing import Annotated, Protocol
 from com.fasterxml.jackson.annotation import JsonFormat, JsonProperty
-from jakarta.inject import Inject, Singleton
 from jakarta.validation import Valid
 from jakarta.validation.constraints import NotBlank, NotNull, Pattern
 from java.time import LocalDate
@@ -66,16 +65,3 @@ class OwnerCareView:
 @JdbcRepository(dialect=Dialect.ORACLE)
 class OwnerCareViewRepository(CrudRepository[OwnerCareView, int], Protocol):
     def findOneById(self, id: int) -> OwnerCareView | None: ...
-
-
-@Requires(env=['oracle'])
-@Singleton
-class OwnerCareViewService:
-    repository: Annotated[OwnerCareViewRepository, Inject]
-
-    def find(self, owner_id: int) -> OwnerCareView | None:
-        return self.repository.findOneById(owner_id)
-
-    def update(self, document: OwnerCareView) -> OwnerCareView | None:
-        self.repository.update(document)
-        return self.find(document.id)
