@@ -32,6 +32,7 @@ def test_database_profile_and_oracle_feature_gates(client, application_context):
 
 
 @pytest.mark.parametrize('dialect,prefix,source_kind,profile', [
+    (None, 'H2', 'default', 'custom-database'),
     (DIALECT_H2, 'H2', 'flat', 'custom-database'),
     (DIALECT_MYSQL, 'MySql', 'environment', 'custom-database'),
     (DIALECT_ORACLE, 'Oracle', 'nested', 'custom-database'),
@@ -53,7 +54,7 @@ def test_dialect_selects_beans_independently_of_profile(
         convention = java.type('io.micronaut.context.env.PropertySource$PropertyConvention')
         builder.propertySources(PropertySource.of(
             'test-dialect-env', properties, convention.ENVIRONMENT_VARIABLE, None))
-    else:
+    elif source_kind != 'default':
         if source_kind == 'nested':
             datasource = HashMap()
             datasource.put('dialect', dialect)
@@ -69,10 +70,12 @@ def test_dialect_selects_beans_independently_of_profile(
         # Resolve conditions without starting servers, migrations or connections.
         environment.start()
         context.configure()
-        assert environment.getProperty(DEFAULT_DIALECT_PROPERTY, java.type('java.lang.String')).get() == dialect
+        String = java.type('java.lang.String')
+        assert environment.getProperty(DEFAULT_DIALECT_PROPERTY, String).get() == (dialect or DIALECT_H2)
         if profile == 'custom-database':
-            assert not any(str(source.getName()).startswith('application-h2')
-                           for source in environment.getPropertySources())
+            # Flyway locations are stored configuration, not lazily provisioned
+            # connection properties supplied by Test Resources.
+            assert environment.containsProperty('flyway.datasources.default.locations') == (source_kind == 'default')
         definitions = context.getBeanDefinitions(java.type('petclinic.repositories.OwnerRepository'))
         names = [str(bean.getBeanType().getSimpleName()) for bean in definitions]
         assert names == [prefix + 'OwnerRepository$Intercepted'], names

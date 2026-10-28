@@ -17,9 +17,11 @@ def application_context(request):
     Each database profile is run in a separate CLI invocation.
     """
 
+    # The SDK pytest builder does not discover the application context configurer
+    # early enough; select H2 explicitly as with the external database profiles.
     fixture = micronaut_test_fixture(
         request,
-        MicronautTest(environments=["test"] + ([] if DATABASE == 'h2' else [DATABASE]), transactional=False,
+        MicronautTest(environments=["test", DATABASE], transactional=False,
                       properties={"petclinic.transaction-priority.reservation-seconds": 5})
     )
     yield fixture

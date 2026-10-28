@@ -3,6 +3,7 @@ package petclinic;
 import io.micronaut.context.ApplicationContextBuilder;
 import io.micronaut.context.ApplicationContextConfigurer;
 import io.micronaut.context.annotation.ContextConfigurer;
+import io.micronaut.context.env.MapPropertySource;
 import io.micronaut.context.env.PropertySource;
 
 import java.util.List;
@@ -31,12 +32,18 @@ public final class DefaultDatabaseConfiguration implements ApplicationContextCon
     }
 
     private static boolean hasDialect(PropertySource source) {
-        if (source.get(DEFAULT_DIALECT_PROPERTY) != null
-                || source.get("DATASOURCES_DEFAULT_DIALECT") != null) {
+        // Inspect stored configuration only. Lazy sources can return a synthetic
+        // value for any key, even when that key has not been configured.
+        if (!(source instanceof MapPropertySource mapSource)) {
+            return false;
+        }
+        Map<String, Object> properties = mapSource.asMap();
+        if (properties.containsKey(DEFAULT_DIALECT_PROPERTY)
+                || properties.containsKey("DATASOURCES_DEFAULT_DIALECT")) {
             return true;
         }
         // TOML/YAML property sources can retain their nested map representation.
-        return source.get("datasources") instanceof Map<?, ?> datasources
+        return properties.get("datasources") instanceof Map<?, ?> datasources
                 && datasources.get("default") instanceof Map<?, ?> datasource
                 && datasource.containsKey("dialect");
     }
