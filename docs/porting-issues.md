@@ -4,7 +4,7 @@ Updated: 2026-10-28 (ownership triage and SDK follow-up). Scope: a faithful Micr
 
 This is a working log for filing issues later. No external issues have been created. It retains open issues, framework improvements, unresolved investigations and active workarounds. Local environment/provisioning issues and fully resolved entries needing no workaround are excluded. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
-**Latest scope:** check the updated local Java reference, organize repositories/services/controllers by functionality, verify SDK 0.1.1 compatibility, and isolate datasource profiles. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
+**Latest scope:** check the updated local Java reference, organize repositories/services/controllers/models/DTOs by functionality, verify SDK 0.1.1 compatibility, and isolate datasource profiles. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
 
 ## Reproduction versions and configuration
 
@@ -366,12 +366,12 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 
 - **Observed on SDK 0.1.1:** After separating the priority service and controller, the real already-taken booking request returns HTML 500 instead of JSON 409. The service's custom `BookingTaken` exception reaches the controller as its generated Java mirror; Python classification fails with `AttributeError: foreign object has no attribute '__micronaut_python_object__'`.
 - **Evidence:** The initial Oracle matrix passes 119 cases and fails only `test_priority_booking_commits_and_reports_taken_appointments`. Logs and XML are retained under `__pyronaut__/reports/refactor-20261028/oracle-initial/`; the corrected full run is archived under `final/oracle/`. Other priority overlap/rollback checks pass.
-- **Workaround (focused HTTP check and full Oracle suite passed):** Recognize `java.type('petclinic.BookingTaken')` before checking the Python `BookingTaken` class. Keep native Python classification for local exceptions. The original end-to-end booking/taken/reset test then passes without changing service transactions or response expectations.
+- **Workaround (focused HTTP check and full Oracle suite passed):** Recognize `java.type('petclinic.models.BookingTaken')` before checking the Python `BookingTaken` class. Keep native Python classification for local exceptions. The original end-to-end booking/taken/reset test then passes without changing service transactions or response expectations.
 - **Issue disposition:** Generated exception-mirror/inter-context integration candidate. Reduce across two small modules before assigning the exact framework owner; this was observed with the new package boundaries, not proven to affect every custom exception or older SDK release.
 
 ## Latest verification checkpoint
 
-The final **2026-10-28** runs collected 121 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. Reports, CLI logs and a source-content manifest are retained locally under `__pyronaut__/reports/refactor-20261028/final/`.
+The final **2026-10-28** runs collected 121 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. After the additional DTO/model package split, all four profiles were rerun with the same passing counts. The latest reports, CLI logs and source-content manifest are retained locally under `__pyronaut__/reports/models-dtos-20261028/final/`; the preceding layer/profile checks remain under `__pyronaut__/reports/refactor-20261028/`.
 
 | Profile | Passed | Expected skips |
 | --- | ---: | ---: |
@@ -382,7 +382,7 @@ The final **2026-10-28** runs collected 121 cases per profile, with zero failure
 
 The existing local Java reference advanced from `0ad5747` to `f0e444e`. Its seven changed files contain dependency/build updates only: no application code, tests, templates or resources changed. Maven/Gradle parent settings, Java native-build metadata and the Java CI GraalVM action are not copied into the SDK-managed Python build. This check validates the port on the installed SDK stack; dependency versions are not claimed to be identical to the Java build.
 
-Repositories, services and controllers are now namespace packages organized by functionality. Explicit concrete query declarations, generated CRUD/ETag predicates, singleton service scopes and transaction annotations remain intact. The profile check asserts both the live database product and JDBC URL. H2 settings live in a separate configuration file and are loaded only as a fallback when no database profile is selected; external profiles contain no inherited H2 connection settings.
+Repositories, services, controllers, domain/persistence models and request/response DTOs are now separate namespace packages organized by functionality. All 103 Python classes retain their fields, annotations and method bodies; imports and explicit Java mirror lookups follow the new packages. Explicit concrete query declarations, generated CRUD/ETag predicates, singleton service scopes and transaction annotations remain intact. The profile check asserts both the live database product and JDBC URL. H2 settings live in a separate configuration file and are loaded only as a fallback when no database profile is selected; external profiles contain no inherited H2 connection settings.
 
 A plain `pyronaut dev` startup with no database environment used H2, served health/vets/clinics, and kept Oracle-only care records unavailable (404). A real `MICRONAUT_ENVIRONMENTS=oracle pyronaut dev` startup opened an Oracle connection, applied all 17 migrations, and served health, vet JSON, care-record JSON and the priority page with HTTP 200. `pyronaut run dev` passes an application argument; this SDK starts Test Resources for `dev`/`test`, while `run` requires an existing database connection.
 
