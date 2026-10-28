@@ -2,11 +2,7 @@
 
 This repository is a Pyronaut port of the Micronaut PetClinic sample application. It demonstrates Python on Micronaut with generated JDBC repositories, views, validation, caching and H2, Oracle, PostgreSQL or MySQL databases.
 
-The [porting assessment and implementation plan](docs/porting-assessment.md) compares this application with the local Micronaut PetClinic reference and records implementation status, deferred work and acceptance criteria.
-
 The [porting issue log](docs/porting-issues.md) records encountered problems, reproduction steps, workarounds, and issue candidates to file later.
-
-The [latest review](docs/review-2026-10-27.md) records the newer ETag/exception port, database verification and a mapping of all 28 Java test classes to Python coverage. Remaining reference-parity checks are documented in the [deferred backlog](docs/porting-issues.md#deferred-work-for-later).
 
 ## What This Sample Shows
 
@@ -112,7 +108,7 @@ PETCLINIC_TEST_DATABASE=postgres pyronaut test
 PETCLINIC_TEST_DATABASE=mysql pyronaut test
 ```
 
-Tests are split by functionality under `tests/`, with shared fixtures in `conftest.py`. Shared cases cover core workflows, current vet/speciality CRUD and ETags, Unicode boundaries, JSON/HTML errors, health/info, spatial queries and geometry writes, catalogs, localization, resources and cache behavior. Oracle adds interval comparisons, vector ranking/thresholds, duality updates and competing priority transactions. Oracle-only cases declare their requirement at the module level; the H2GIS connection regression runs only on H2. See the [test guide](tests/README.md) and [review coverage map](docs/review-2026-10-27.md#test-organization).
+Tests are split by functionality under `tests/`, with shared fixtures in `conftest.py`. Shared cases cover core workflows, current vet/speciality CRUD and ETags, Unicode boundaries, JSON/HTML errors, health/info, spatial queries and geometry writes, catalogs, localization, resources and cache behavior. Oracle adds interval comparisons, vector ranking/thresholds, duality updates and competing priority transactions. Oracle-only cases declare their requirement at the module level; the H2GIS connection regression runs only on H2. See the [test guide](tests/README.md).
 
 These commands run SDK configuration validation. A single documented suppression covers the SDK schema's incorrect shape for Oracle Test Resources file-copy settings; actual container initialization is verified by the Oracle tests.
 

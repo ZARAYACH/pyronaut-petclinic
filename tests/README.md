@@ -30,4 +30,4 @@ The HTTP fixture is non-transactional so requests use their real service transac
 
 Add tests to the relevant functionality module. Use dedicated records and clean them up when mutating canonical data. Some older workflow fixtures intentionally live for the session, so use actual repository IDs and avoid assuming a suite-wide row count or sequence value. Configuration validation runs with one documented SDK schema suppression; see `pyproject.toml`.
 
-The [review report](../docs/review-2026-10-27.md) maps all 28 Java test classes to coverage and states remaining limits. Its source-derived geometry fixtures live in `tests-config/fixtures/`, loaded through the application environment rather than paths beside generated test sources.
+Known limitations and final verification results are recorded in the [issue log](../docs/porting-issues.md). Source-derived geometry fixtures live in `tests-config/fixtures/`, loaded through the application environment rather than paths beside generated test sources.

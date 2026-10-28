@@ -4,7 +4,7 @@ Updated: 2026-10-27. Scope: a faithful Micronaut PetClinic port to Pyronaut, exc
 
 This is a working log for filing issues later. No external issues have been created. Entries distinguish confirmed defects, environment problems, resolved port adaptations, and checks still in progress. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
-**Latest scope:** the user authorized a full review, functionality-based tests, and the newer veterinarian ETag/exception changes. The earlier stabilization backlog remains deferred except for the corrections recorded in the [review report](review-2026-10-27.md). Oracle Deep Data Security remains excluded. The report maps all 28 Java test classes (141 methods) to Python coverage and lists remaining parity limits.
+**Latest scope:** the user authorized a full review, functionality-based tests, and the newer veterinarian ETag/exception changes. The earlier stabilization backlog remains deferred except for the corrections recorded below. Oracle Deep Data Security remains excluded.
 
 ## Environment for these reproductions
 
@@ -442,7 +442,7 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 
 - **Observed:** The local reference at `0ad5747` includes veterinarian and speciality CRUD, assignment hashes, generated row ETags, forms and JSON precondition failures. The older port exposed only vet listing and its historical three-field JSON projection.
 - **Resolution:** Port the generated ETag model, native/profile-local database functions, transactional CRUD, speciality management, current DTOs, templates, source JavaScript and exception responses. Hashes cover sorted speciality IDs and exclude names. Rejected stale updates/deletes restore join rows through transaction rollback.
-- **Evidence:** Functionality modules cover lifecycle, assignment-only changes, shared speciality preservation, no-op saves, missing/blank/weak/stale tags, duplicates, malformed JSON, missing resources and text limits. See the full review report for final profile counts.
+- **Evidence:** Functionality modules cover lifecycle, assignment-only changes, shared speciality preservation, no-op saves, missing/blank/weak/stale tags, duplicates, malformed JSON, missing resources and text limits. Final profile counts are recorded below.
 - **Disposition:** Resolved application feature gap. It is not an upstream Pyronaut defect. A Python method initially named `new` also failed JVM generation because it is a Java keyword; the route implementation is now named `new_vet`.
 
 ### PORT-045 — Nullable collection elements cross the boundary as zero or foreign nulls
@@ -456,7 +456,7 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 
 - **Observed:** H2 and Oracle ETag CRUD worked. PostgreSQL then failed 24 shared checks with `ERROR: column vet_.first_name does not exist`. The mapped columns are quoted uppercase names; the synthesized ETag read expression references their unquoted names, which PostgreSQL folds to lowercase.
 - **Resolution:** `db/postgres/V5__etag_identifier_aliases.sql` adds computed lowercase aliases for first name, last name and the speciality hash. They derive from the canonical columns and cannot be independently changed. The ORM still generates and enforces the ETag predicate; no Python compare-then-write replacement was introduced.
-- **Evidence:** The first corrected PostgreSQL run passed all 84 then-current shared cases, including stale link rollback; later final coverage is in the review report. Initial failures are preserved under `__pyronaut__/reports/review-20261026/postgres-initial/`.
+- **Evidence:** The first corrected PostgreSQL run passed all 84 then-current shared cases, including stale link rollback; final coverage is recorded below. Initial failures are preserved under `__pyronaut__/reports/review-20261026/postgres-initial/`.
 - **Disposition:** Micronaut Data generated ETag transformer/identifier quoting candidate. Reduce on both Java and Python before claiming it is Python-specific.
 
 ### PORT-047 — MySQL cannot create the ETag routine with ordinary fixture privileges
@@ -489,4 +489,13 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 
 ## Latest verification checkpoint
 
-See [the 2026-10-27 review report](review-2026-10-27.md#final-verification) for final profile results, source-test mapping, commit scope and unresolved parity limits. Configuration validation is enabled with the single documented Test Resources suppression. No external issues or remote pushes were created.
+The final 2026-10-27 runs collected 121 cases per profile, with zero failures/errors:
+
+| Profile | Passed | Expected skips |
+| --- | ---: | ---: |
+| H2 | 101 | 20 Oracle-only cases |
+| Oracle | 120 | 1 H2-only case |
+| PostgreSQL | 100 | 20 Oracle-only and 1 H2-only case |
+| MySQL | 100 | 20 Oracle-only and 1 H2-only case |
+
+Configuration validation is enabled with the single documented Test Resources suppression. Core sample-data lifecycle parity, model/helper equivalence, concurrent first catalog insertion, browser behavior, packaged execution and remote CI remain outside this checkpoint. No external issues or remote pushes were created.
