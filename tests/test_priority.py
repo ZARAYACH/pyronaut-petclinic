@@ -53,7 +53,7 @@ def test_priority_booking_commits_and_reports_taken_appointments(client):
     prefix = '/oracle/transaction-priority'
     page = client.get(prefix, timeout=40)
     assert page.status_code == 200, page.text
-    assert 'transaction-priority-page' in page.text and 'data-reservation-seconds="5"' in page.text
+    assert 'transaction-priority-page' in page.text and 'data-reservation-seconds="15"' in page.text
     choices = re.findall(r'<option value="(\d+)">', page.text)
     assert len(choices) == 2
     appointment = int(choices[0])
@@ -72,7 +72,8 @@ def test_priority_booking_commits_and_reports_taken_appointments(client):
     assert len(re.findall(r'<option value="(\d+)">', client.get(prefix).text)) == 2
 
 
-def test_priority_emergency_displaces_a_regular_transaction(client, application_context):
+@pytest.mark.parametrize('attempt', range(3))
+def test_priority_emergency_displaces_a_regular_transaction(client, application_context, attempt):
     import java
     import json
     import time
@@ -133,6 +134,9 @@ def test_priority_emergency_displaces_a_regular_transaction(client, application_
         result = json.loads(str(displaced.body()))
         assert result['outcome'] == 'PRIORITY_ROLLED_BACK'
         assert result['databaseStatus'] == 'BOOKED_FOR_EMERGENCY'
+        repository = application_context.java_ctx.getBean(java.type('petclinic.repositories.AppointmentRepository'))
+        from petclinic.models.appointments import status_name
+        assert status_name(repository.findOneById(appointment).status) == 'BOOKED_FOR_EMERGENCY', attempt
     finally:
         http.close()
     assert client.post(prefix + '/reset', timeout=40).status_code == 200

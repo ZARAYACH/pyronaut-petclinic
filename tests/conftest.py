@@ -21,8 +21,7 @@ def application_context(request):
     # early enough; select H2 explicitly as with the external database profiles.
     fixture = micronaut_test_fixture(
         request,
-        MicronautTest(environments=["test", DATABASE], transactional=False,
-                      properties={"petclinic.transaction-priority.reservation-seconds": 5})
+        MicronautTest(environments=["test", DATABASE], transactional=False)
     )
     yield fixture
     fixture.stop()
