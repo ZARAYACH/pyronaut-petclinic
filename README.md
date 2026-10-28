@@ -44,7 +44,7 @@ type = 'jvm'
 ```text
 config/          Micronaut application configuration
 src/             Python application code
-src-java/        H2 ETag SQL adapter and early database configuration bootstrap
+src-java/        H2 ETag adapter, datasource bootstrap and Oracle priority session cleanup
 static/          Static web assets
 tests/           Pytest test suite
 tests-config/    Test-specific Micronaut configuration
@@ -152,7 +152,7 @@ The regular Oracle image includes spatial types; the slim image cannot run that 
 
 The migrations provide visit intervals, 20 clinic branches, 62 service offerings and appointment fixtures. Oracle additionally has native interval/vector storage and the owner-care duality view; its startup loader reads the reference's 10 knowledge documents and 20 chunks. Fixture lifecycle differences and remaining parity checks are tracked in the issue log.
 
-Run SDK commands from the project root so Test Resources can copy the Oracle priority setup script from `config/oracle/01-priority.sql`. The booking pause defaults to 15 seconds, matching the reference.
+Run SDK commands from the project root so Test Resources can copy the Oracle priority setup script from `config/oracle/01-priority.sql`. The booking pause defaults to 15 seconds, matching the reference. LOW demo transactions retire their physical connection after cleanup to avoid a reproduced Oracle/JDBC session-reuse failure; the repeated-booking regression and workaround are documented as PORT-054 in the issue log.
 
 The clinic map loads Leaflet and drawing controls from a CDN. Coordinate-based search remains available when those assets cannot load.
 

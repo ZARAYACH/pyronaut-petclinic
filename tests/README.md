@@ -24,6 +24,8 @@ The default test profile is Oracle. Each invocation has one application/database
 | Appointment persistence and Oracle priority | `test_appointment_repository.py`, `test_priority.py` |
 | Errors, locale and dialect gating | `test_exception_handling.py`, `test_locale.py`, `test_database_profiles.py` |
 
+Priority overlap checks repeat three times using the real 15-second reservation pause and assert the final persisted emergency booking after both responses, covering reuse after an earlier rollback (PORT-054).
+
 Oracle-only modules declare `pytest.mark.skipif` explicitly. Ordinary visit creation is also exercised by the shared owner workflow. The H2GIS physical-connection regression runs only on H2. Shared geometry and appointment repository checks run on all four profiles.
 
 The HTTP fixture is non-transactional so requests use their real service transactions. The direct locking regression opens an explicit write transaction, matching the Java source test's transaction boundary. Java enum mirrors are compared by their normalized names. A Java HTTP client is used for blank `If-Match` values because the SDK requests client rejects them before sending.

@@ -20,7 +20,7 @@ Record a reduced reproduction and reconfirm it before opening an upstream issue.
 
 ## Ownership triage (2026-10-28)
 
-All **29 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
+All **30 retained entries** are classified below. Original issue identifiers are preserved, so numbering has gaps after removing environment-only findings and fully resolved entries that need no workaround. The original ownership triage reviewed saved sources/artifacts; the SDK 0.1.1 findings below come from the subsequent regression check. No external issues have been filed. Historical details describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
 
 | Primary classification | Entries | Meaning |
 | --- | ---: | --- |
@@ -28,7 +28,7 @@ All **29 retained entries** are classified below. Original issue identifiers are
 | Framework improvement | 5 | Interop documentation, diagnostics or capability configuration; no correctness defect established |
 | Application/test | 3 | Open application work or implementation choices still needing verification/workarounds |
 | Reference application | 3 | Java sample behavior or schema; not automatically a Pyronaut issue |
-| Unresolved | 4 | Evidence does not yet distinguish application setup from a library/runtime defect |
+| Unresolved | 5 | Evidence has not yet isolated the responsible resource, library or runtime |
 
 Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 14 framework candidates, **13 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 13 proven Pyronaut defects.
 
@@ -65,6 +65,7 @@ Counts assign each PORT identifier once. Mixed entries have separately named par
 | PORT-051 | Framework candidate | **Embedded pytest capture on SDK 0.1.1.** Default file-descriptor capture aborts pytest before cases run. Python stream capture permits execution; retain `--capture=sys` in pytest configuration and reduce the runner/filesystem interaction. |
 | PORT-052 | Framework candidate | **Python exception mirrors across service boundaries.** An already-taken booking becomes a Java exception mirror; checking the Python exception type raises an interop attribute error. Detect its generated Java type first while preserving the HTTP 409 outcome. |
 | PORT-053 | Framework candidate | **Pyronaut pytest application-configurer discovery.** The fixture builder selects its application classloader after the base builder has loaded configurers. A project `@ContextConfigurer` is missed; explicitly select the H2 test profile and exercise default startup through an application-classloader builder. |
+| PORT-054 | Unresolved | **Oracle database/JDBC priority-session reuse.** Plain JDBC reproduces a first correct rollback followed by LOW silently overwriting committed HIGH bookings on a reused session. This is outside Pyronaut/Micronaut; distinguish the database from its JDBC driver before filing. Retire LOW demo connections after cleanup and verify repeated races. |
 
 ### Framework defect investigation queue
 
@@ -99,12 +100,14 @@ These are enhancement/documentation requests, not additions to the defect count.
 
 ### Unresolved investigations and our remaining backlog
 
-Do not file PORT-004, PORT-010, PORT-017 or PORT-043 as confirmed Pyronaut defects yet:
+Do not file PORT-004, PORT-010, PORT-017, PORT-043 or PORT-054 as confirmed Pyronaut defects:
 
 - **PORT-004:** create separate controls for resource bundle discovery, `Environment` lookup and caller-sensitive invocation. Check that the resource is packaged before blaming a classloader; route restricted Java lookup separately if reproducible without resource access.
 - **PORT-010:** compare normalized/unnormalized periods through direct JDBC, Java Data and Python Data using the same stored interval. Inspect bound values and database comparisons; this determines application normalization versus library/driver ownership.
 - **PORT-017:** the local Java `OwnerCareView` uses `LocalDate` without our optional-time `JsonFormat`. Compare actual Oracle JSON and Java/Python deserializers with identical versions/mappings. A formatting workaround alone does not prove a Python compiler defect.
 - **PORT-043:** the failed loader experiment was removed. Reconstruct a resource-only example before revisiting seeding, inspect the processed artifact, and establish the supported fresh-context configuration. Existing `Environment` loading succeeds elsewhere; do not combine this with PORT-004 or PORT-028 without a shared cause.
+
+- **PORT-054:** repeated raw JDBC races reproduce the session-reuse failure without framework code. Route this to Oracle database/JDBC investigation, retaining the connection-retirement workaround until corrected versions pass repeated reuse.
 
 **PORT-042 remains the clearest open application correctness task:** the disabled sample-data flag does not suppress core SQL fixtures. Address it later through conditional loading with separate enabled/disabled/restart checks and a migration-history plan. Do not rewrite applied Oracle checksums or remove user rows. PORT-043 does not turn this application gap into a framework defect.
 
@@ -379,16 +382,26 @@ Interactive browser parity, concurrent insertion of an absent clinic/code, fixtu
 - **Workaround:** Select `environments=["test", DATABASE]` for all HTTP/database matrix runs, including H2. Check the profile-free H2 fallback separately with `ApplicationContext.builder(applicationClassLoader)`; do not restore environment-based repository conditions.
 - **Evidence:** The initial full H2 run failed 85 of 106 executed cases; its profile check had no configured dialect and no datasource. Reports are retained under `__pyronaut__/reports/dialect-selection-20261028/initial/`. Focused failure logs and inspected SDK builder bytecode are retained locally in `/private/tmp/pyronaut-dialect-fallback-debug.log` and `/private/tmp/pyronaut-pytest-extension-bytecode.txt`.
 
+### PORT-054 — Reused Oracle sessions can lose later priority-rollback failures
+
+- **Classification:** Unresolved between Oracle database and JDBC driver; reproduced without Pyronaut, Micronaut, Hikari or the browser. This is not classified as a Python framework defect or an environment provisioning problem.
+- **Verified versions:** Cached Oracle Free `23.26.2.0.0` (`gvenzl/oracle-free:23.26.2-faststart`) with Oracle JDBC `23.26.3.0.0`. The PDB has `priority_txns_mode=ROLLBACK` and both wait targets set to 3 seconds.
+- **Reproduction:** Keep a LOW and HIGH JDBC connection open across three booking races. LOW holds a row and pauses for the real 15-second demo interval; HIGH updates the same row after one second. The first LOW request receives ORA-63302. Reusing the same sessions for races two and three instead lets LOW update and commit after HIGH already committed, leaving `BOOKED_FOR_REGULAR`. The live development app and repeated HTTP regression reproduce the same incorrect final row and two `COMMITTED` responses.
+- **Expected contract:** Oracle documents ORA-63300/63302 until rollback acknowledgement; the displaced transaction must not silently continue and overwrite HIGH. See [Oracle's priority-transaction acknowledgement documentation](https://docs.oracle.com/en/database/oracle/oracle-database/26/admin/managing-transactions.html).
+- **Coverage correction:** The previous HTTP suite tested one displacement using a shortened 5-second pause. It did not establish that subsequent priority rollbacks remain reliable on reused sessions. Tests now use the application default of 15 seconds, repeat the overlap three times, and check persisted state after both requests finish.
+- **Application workaround:** `OraclePriorityConnectionCleanup` registers a connection callback only for LOW Oracle-priority transactions. After Micronaut completes transaction cleanup and before the connection returns to Hikari, it retires that one physical connection. HIGH and ordinary transactions retain pooling. This deliberately spends a new connection on each LOW demo attempt; it preserves real Oracle rollback exceptions and does not fabricate a UI outcome or retry the losing write. Remove the workaround only after the repeated JDBC and HTTP reproductions pass with session reuse on corrected Oracle/driver versions.
+- **Evidence:** Original live responses, Oracle trace, repeated raw JDBC source/output and failing HTTP reports are retained locally under `__pyronaut__/reports/priority-overlap-20261028/before/`. The existing demo appointments were left unchanged; temporary live diagnostic rows were removed.
+
 ## Latest verification checkpoint
 
-The final **2026-10-28** runs collected 127 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. After the package split and dialect-based bean selection, all four profiles were rerun. The latest reports, CLI logs and source-content manifest are retained locally under `__pyronaut__/reports/dialect-selection-20261028/final/`; the preceding package/profile checks remain under `__pyronaut__/reports/models-dtos-20261028/final/` and `__pyronaut__/reports/refactor-20261028/`.
+The final **2026-10-28** runs collected 133 cases per profile, with zero failures/errors. They used Pyronaut **0.1.1**, Core **5.2.19**, Data **5.2.3**, Serialization **3.2.5**, Validation **5.2.1**, Test Resources client **4.3.1** and matching GraalPy **25.4.4.1.1**. After the priority-session cleanup, all four profiles were rerun. Oracle uses the default 15-second reservation pause and repeats the displacement race three times. The latest reports, CLI logs and source-content manifest are retained locally under `__pyronaut__/reports/priority-overlap-20261028/final/`; preceding dialect and package checks remain under `__pyronaut__/reports/dialect-selection-20261028/final/`, `__pyronaut__/reports/models-dtos-20261028/final/` and `__pyronaut__/reports/refactor-20261028/`.
 
 | Profile | Passed | Expected skips |
 | --- | ---: | ---: |
-| H2 | 107 | 20 Oracle-only cases |
-| Oracle | 126 | 1 H2-only case |
-| PostgreSQL | 106 | 20 Oracle-only and 1 H2-only case |
-| MySQL | 106 | 20 Oracle-only and 1 H2-only case |
+| H2 | 107 | 26 Oracle-only cases |
+| Oracle | 132 | 1 H2-only case |
+| PostgreSQL | 106 | 26 Oracle-only and 1 H2-only case |
+| MySQL | 106 | 26 Oracle-only and 1 H2-only case |
 
 The existing local Java reference advanced from `0ad5747` to `f0e444e`. Its seven changed files contain dependency/build updates only: no application code, tests, templates or resources changed. Maven/Gradle parent settings, Java native-build metadata and the Java CI GraalVM action are not copied into the SDK-managed Python build. This check validates the port on the installed SDK stack; dependency versions are not claimed to be identical to the Java build.
 
@@ -398,6 +411,8 @@ A plain `pyronaut dev` startup with no database environment used H2, served heal
 
 Configuration validation is enabled with the single documented Test Resources suppression. Existing cached images were reused. Core sample-data lifecycle parity, model/helper equivalence, concurrent first catalog insertion, interactive browser behavior, packaged execution and remote CI remain outside this checkpoint. No external issues or remote pushes were created.
 
-Following that matrix, the missing priority-page JavaScript module was restored from the local Java reference. A new HTTP regression follows the page's local script references and checks successful delivery with a JavaScript content type. The full Oracle follow-up collected **128 cases: 127 passed, 1 expected H2-only skip, zero failures/errors**, including regular booking, emergency displacement, lock timeouts and reset. Reports, CLI output and tested source hashes are retained locally under `__pyronaut__/reports/priority-ui-20261028/oracle/`. JavaScript syntax validation passed, and the running development server served the restored module with HTTP 200. Browser click verification remains outside this check.
+Earlier priority-page checks restored the missing JavaScript module from the local Java reference. A new HTTP regression follows the page's local script references and checks successful delivery with a JavaScript content type. The full Oracle follow-up collected **128 cases: 127 passed, 1 expected H2-only skip, zero failures/errors**, including regular booking, emergency displacement, lock timeouts and reset. Reports, CLI output and tested source hashes are retained locally under `__pyronaut__/reports/priority-ui-20261028/oracle/`. JavaScript syntax validation passed, and the running development server served the restored module with HTTP 200. Browser click verification remains outside this check.
 
 The next priority-page check found 19 missing English messages, also absent from the local Java reference's base bundle. English now supplies the same outcome and summary meanings as the existing Spanish/German translations. All 37 priority message keys are present in each language; existing reference translations, the booking script and page IDs/classes are preserved. HTTP regressions use the locale selector and verify all 20 browser status labels, including the committed-booking caption, in English, Spanish and German. The full Oracle follow-up collected **131 cases: 130 passed, 1 expected H2-only skip, zero failures/errors**. Reports and tested source hashes are retained locally under `__pyronaut__/reports/priority-labels-20261028/final-oracle/`. The running development page also served the restored English captions.
+
+PORT-054 verification also exercised two consecutive overlapping bookings against the running development application. Both runs returned HTTP 200/`COMMITTED` for HIGH and HTTP 409/`PRIORITY_ROLLED_BACK` for LOW, and both final rows remained `BOOKED_FOR_EMERGENCY`. The LOW sessions were retired after cleanup. Existing demo bookings were left unchanged and temporary diagnostic rows were removed. Live response timelines are retained under `__pyronaut__/reports/priority-overlap-20261028/live-after/`. This verifies real request outcomes and persisted rows; it does not claim automated browser clicks.
