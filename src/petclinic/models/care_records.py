@@ -1,4 +1,4 @@
-"""Oracle JSON duality documents for the existing owner, pet, and visit tables."""
+"""Care_records domain and persistence models."""
 
 from dataclasses import dataclass, field
 from typing import Annotated
@@ -9,7 +9,7 @@ from java.time import LocalDate
 from micronaut.data.annotation import Id, JsonSubView, JsonView, MappedProperty, Relation
 from micronaut.data.annotation.sql import JoinColumn
 from micronaut.serde.annotation import Serdeable
-from petclinic.entities import Owner, Pet, Visit
+from petclinic.models.patients import Owner, Pet, Visit
 
 
 @Serdeable

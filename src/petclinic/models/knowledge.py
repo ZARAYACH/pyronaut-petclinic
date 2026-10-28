@@ -1,4 +1,4 @@
-"""Oracle vector retrieval using the reference's checked-in embedding catalog."""
+"""Knowledge domain and persistence models."""
 
 from dataclasses import dataclass
 from typing import Annotated

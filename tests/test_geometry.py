@@ -9,7 +9,7 @@ def test_clinic_repository_saves_geometry_and_reads_it_back(application_context)
     from micronaut.data.model.geo import Point
     from petclinic.controllers.clinics import _polygon
     repository = application_context.java_ctx.getBean(java.type('petclinic.repositories.ClinicRepository'))
-    Clinic = java.type('petclinic.Clinic')
+    Clinic = java.type('petclinic.models.Clinic')
     point = Point(-89.3838, 43.0748)
     area = _polygon([Point(-89.3938, 43.0668), Point(-89.3738, 43.0668),
                      Point(-89.3738, 43.0828), Point(-89.3938, 43.0828)])

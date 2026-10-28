@@ -1,15 +1,15 @@
 """The three Java AppointmentRepositoryTest contracts on every profile."""
 
 import pytest
-from petclinic.transaction_priority import status_name
+from petclinic.models.appointments import status_name
 
 
 @pytest.fixture
 def appointments(application_context):
     import java
     repository = application_context.java_ctx.getBean(java.type('petclinic.repositories.AppointmentRepository'))
-    Appointment = java.type('petclinic.Appointment')
-    Status = java.type('petclinic.AppointmentStatus')
+    Appointment = java.type('petclinic.models.Appointment')
+    Status = java.type('petclinic.models.AppointmentStatus')
     created = []
     def save(label, order, status=None):
         row = repository.save(Appointment(label, order, status or Status.AVAILABLE, None))

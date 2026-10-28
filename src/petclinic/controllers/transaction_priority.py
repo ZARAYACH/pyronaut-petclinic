@@ -13,7 +13,7 @@ from micronaut.http.exceptions import HttpStatusException
 from micronaut.scheduling.annotation import ExecuteOn
 from micronaut.transaction.exceptions import OracleTransactionPriorityException, TransactionTimedOutException
 from micronaut.views import View
-from petclinic.transaction_priority import AppointmentStatus, BookingType, BookingOutcome, BookingTaken, status_name, with_status
+from petclinic.models.appointments import AppointmentStatus, BookingType, BookingOutcome, BookingTaken, status_name, with_status
 from petclinic.dtos.appointments import OracleBookingResult
 from petclinic.repositories.appointments import AppointmentRepository
 from petclinic.services.transaction_priority import OracleTransactionPriorityService
@@ -31,7 +31,7 @@ def booking_outcome(error) -> BookingOutcome:
     if isinstance(error, OracleTransactionPriorityException):
         return BookingOutcome.PRIORITY_ROLLED_BACK
     # A service exception can cross the AOP/context boundary as its Java mirror.
-    if isinstance(error, java.type('petclinic.BookingTaken')):
+    if isinstance(error, java.type('petclinic.models.BookingTaken')):
         return BookingOutcome.TAKEN
     if isinstance(error, BookingTaken):
         return BookingOutcome.TAKEN

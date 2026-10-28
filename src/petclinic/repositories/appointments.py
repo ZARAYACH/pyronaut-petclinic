@@ -6,7 +6,7 @@ from micronaut.data.repository import GenericRepository, CrudRepository
 from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
-from petclinic.transaction_priority import Appointment
+from petclinic.models.appointments import Appointment
 
 
 class AppointmentRepository(GenericRepository[Appointment, int], Protocol):

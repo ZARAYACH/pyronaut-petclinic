@@ -1,6 +1,7 @@
 """Presentation models for owner, pet and veterinarian views."""
 
-from petclinic.entities import Owner, Pet, Vet
+from petclinic.models.patients import Owner, Pet
+from petclinic.models.vets import Vet
 from petclinic.services.durations import duration_minutes
 
 

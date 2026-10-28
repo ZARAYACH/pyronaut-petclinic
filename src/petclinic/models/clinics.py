@@ -1,4 +1,4 @@
-"""Clinic spatial queries and atomic service catalog upserts in Micronaut Data."""
+"""Clinics domain and persistence models."""
 
 from dataclasses import dataclass, field
 from typing import Annotated

@@ -8,7 +8,7 @@ from micronaut.context.annotation import Factory, Requires
 from micronaut.context.event import ApplicationEventListener, StartupEvent
 from micronaut.data.model.vector.search import Score, ScoringFunction
 from petclinic.resources import ApplicationResources
-from petclinic.knowledge import PetCareDocument, PetCareChunk
+from petclinic.models.knowledge import PetCareDocument, PetCareChunk
 from petclinic.repositories.knowledge import PetCareDocumentRepository, PetCareChunkRepository
 from petclinic.services.embeddings import StaticPetCareEmbeddingService
 

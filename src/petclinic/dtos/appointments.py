@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from micronaut.serde.annotation import Serdeable
-from petclinic.transaction_priority import AppointmentStatus, BookingOutcome, Appointment
+from petclinic.models.appointments import AppointmentStatus, BookingOutcome, Appointment
 
 
 @Serdeable

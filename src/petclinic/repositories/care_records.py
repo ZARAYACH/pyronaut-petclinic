@@ -5,7 +5,7 @@ from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
 from micronaut.data.repository import CrudRepository
-from petclinic.care_records import OwnerCareView
+from petclinic.models.care_records import OwnerCareView
 
 
 @Requires(env=['oracle'])

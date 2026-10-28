@@ -6,7 +6,7 @@ from jakarta.transaction import Transactional
 from micronaut.data.exceptions import OptimisticLockException
 from micronaut.http import HttpStatus
 from micronaut.http.exceptions import HttpStatusException
-from petclinic.entities import Speciality, Vet
+from petclinic.models.vets import Speciality, Vet
 from petclinic.etags import speciality_hash
 from petclinic.repositories.vets import SpecialityRepository, VetRepository, VetSpecialityRepository
 from petclinic.dtos.vets import VetForm, SpecialityForm

@@ -60,8 +60,10 @@ Application layers under `src/petclinic/` are split into packages:
 | `repositories/` | Contracts and dialect implementations grouped by owners, pets, visits, vets, clinics, appointments, care records and knowledge |
 | `services/` | Shared clinic facade, feature services, embeddings, startup loading and presentation helpers |
 | `controllers/` | Routes grouped by functionality, shared form helpers and global error handlers |
+| `models/` | Domain entities, appointment enums, persistence projections and Oracle document/vector models |
+| `dtos/` | Owner/pet/visit forms, veterinarian forms, clinic requests/responses and booking/search response objects |
 
-These are Python namespace packages: Pyronaut generates their runtime `__init__.py` files. Feature modules alongside them retain entities, request/response models and enums. Import a class from its owning module, such as `petclinic.repositories.owners` or `petclinic.services.vets`.
+These are Python namespace packages: Pyronaut generates their runtime `__init__.py` files. Import a class from its owning module, such as `petclinic.models.patients`, `petclinic.dtos.vets`, `petclinic.repositories.owners` or `petclinic.services.vets`. Related owner/pet/visit models stay together so their bidirectional relationships do not introduce circular imports.
 
 Concrete dialect repositories retain their explicit CRUD/query declarations because the inherited generic and dialect metadata paths still need framework workarounds (PORT-035/039).
 

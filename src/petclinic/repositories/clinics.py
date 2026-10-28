@@ -7,7 +7,7 @@ from micronaut.data.repository import GenericRepository, CrudRepository
 from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect
-from petclinic.clinics import Clinic, ClinicServiceOffering
+from petclinic.models.clinics import Clinic, ClinicServiceOffering
 
 
 class ClinicRepository(GenericRepository[Clinic, int], Protocol):

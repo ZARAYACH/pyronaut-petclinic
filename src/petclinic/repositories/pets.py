@@ -4,8 +4,8 @@ from typing import Protocol
 from micronaut.data.annotation import Join
 from micronaut.data.annotation import Query
 from micronaut.data.repository import GenericRepository
-from ..entities import Pet
-from ..entities import PetType
+from petclinic.models.patients import Pet
+from petclinic.models.patients import PetType
 from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect

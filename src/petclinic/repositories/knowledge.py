@@ -7,7 +7,7 @@ from micronaut.data.model.query.builder.sql import Dialect
 from micronaut.data.model.vector import Vector
 from micronaut.data.model.vector.search import Score, ScoringFunction, SearchResults
 from micronaut.data.repository import CrudRepository
-from petclinic.knowledge import PetCareDocument, PetCareChunk
+from petclinic.models.knowledge import PetCareDocument, PetCareChunk
 
 
 @Requires(env=['oracle'])

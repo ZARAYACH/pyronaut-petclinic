@@ -5,7 +5,8 @@ from java.time import Duration, LocalDate, Period
 from jakarta.inject import Inject, Singleton
 from jakarta.transaction import Transactional
 from micronaut.cache.annotation import Cacheable
-from petclinic.entities import Owner, Pet, PetType, Speciality, Vet, Visit
+from petclinic.models.patients import Owner, Pet, PetType, Visit
+from petclinic.models.vets import Speciality, Vet
 from petclinic.repositories.owners import OwnerRepository
 from petclinic.repositories.pets import PetRepository, PetTypeRepository
 from petclinic.repositories.vets import SpecialityRepository, VetRepository

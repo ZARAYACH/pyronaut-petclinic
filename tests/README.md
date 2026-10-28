@@ -30,7 +30,7 @@ The HTTP fixture is non-transactional so requests use their real service transac
 
 Pytest uses Python stream capture (`--capture=sys`, configured in `pyproject.toml`) because the updated embedded runner fails with default file-descriptor capture. Care-record children retain their field constraints and are validated explicitly; nested collection `Valid` annotations generate invalid Java on SDK 0.1.1. See PORT-018/051 in the issue log.
 
-Repository and service Java mirrors now live under `petclinic.repositories` and `petclinic.services`. Python imports use the owning functionality module. The profile regression checks the actual database product and JDBC URL, including the default H2 fallback when the fixture selects only the `test` environment.
+Java mirrors live under their layer packages: `petclinic.repositories`, `petclinic.services`, `petclinic.models` and `petclinic.dtos`. Python imports use the owning functionality module. The profile regression checks the actual database product and JDBC URL, including the default H2 fallback when the fixture selects only the `test` environment.
 
 Add tests to the relevant functionality module. Use dedicated records and clean them up when mutating canonical data. Some older workflow fixtures intentionally live for the session, so use actual repository IDs and avoid assuming a suite-wide row count or sequence value. Configuration validation runs with one documented SDK schema suppression; see `pyproject.toml`.
 

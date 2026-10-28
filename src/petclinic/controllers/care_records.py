@@ -10,7 +10,7 @@ from micronaut.http import HttpResponse, HttpStatus, MediaType
 from micronaut.http.annotation import Body, Controller, Get, Put
 from petclinic.validation import violation_path
 from petclinic.errors import entity_not_found
-from petclinic.care_records import OwnerCareView
+from petclinic.models.care_records import OwnerCareView
 from petclinic.services.care_records import OwnerCareViewService
 
 

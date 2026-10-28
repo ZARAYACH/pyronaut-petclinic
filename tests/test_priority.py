@@ -100,7 +100,7 @@ def test_priority_emergency_displaces_a_regular_transaction(client, application_
 
 def test_priority_outcomes_distinguish_rollback_timeout_and_other_failures():
     import java
-    from petclinic.transaction_priority import BookingOutcome, BookingTaken
+    from petclinic.models.appointments import BookingOutcome, BookingTaken
     from petclinic.controllers.transaction_priority import booking_outcome
     PriorityError = java.type('io.micronaut.transaction.exceptions.OracleTransactionPriorityException')
     TimeoutError = java.type('io.micronaut.transaction.exceptions.TransactionTimedOutException')

@@ -7,7 +7,7 @@ from java.time import Period
 from micronaut.data.annotation import Join
 from micronaut.data.annotation import Query
 from micronaut.data.repository import GenericRepository
-from ..entities import Visit
+from petclinic.models.patients import Visit
 from micronaut.context.annotation import Requires
 from micronaut.data.jdbc.annotation import JdbcRepository
 from micronaut.data.model.query.builder.sql import Dialect

@@ -1,4 +1,4 @@
-"""Oracle's competing LOW and HIGH appointment transactions from the reference."""
+"""Appointments domain and persistence models."""
 
 from dataclasses import dataclass
 from enum import Enum
