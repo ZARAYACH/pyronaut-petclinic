@@ -1,6 +1,6 @@
 # PetClinic port: issue candidates and encountered problems
 
-Updated: 2026-10-27. Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
+Updated: 2026-10-28 (ownership triage). Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
 
 This is a working log for filing issues later. No external issues have been created. Entries distinguish confirmed defects, environment problems, resolved port adaptations, and checks still in progress. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
@@ -12,58 +12,132 @@ This is a working log for filing issues later. No external issues have been crea
 - Micronaut Data runtime/processor `5.2.3`; Micronaut Serialization `3.1.0`.
 - Embedded GraalPy `25.3.4.1`; matching GraalPy 3.13 used for pytest.
 - Cached Oracle image `gvenzl/oracle-free:23.26.2-faststart`.
-- Checks use `pyronaut test --no-validate`; this skips SDK configuration validation.
+- Early checks used `pyronaut test --no-validate`. The final 2026-10-27 matrix enabled configuration validation with one narrow suppression for `test-resources.containers.oracle.copy-to-container`; see PORT-027.
 
 Record a reduced reproduction and reconfirm it before opening an upstream issue. Several entries are resolved application differences or expected environment requirements, rather than defects to file against Pyronaut.
 
-## Filing guide
+## Ownership triage (2026-10-28)
 
-Use the `PORT-xxx` identifier in the eventual issue title or description. Copy the observed behavior, reproduction, impact, environment and workaround from the entry; attach a reduced example and its full exception trace. Assign the owning project after reduction establishes the cause. No severity or upstream ownership is inferred from an application failure alone.
+All **50 entries** are classified below. This is a source-and-artifact review of the recorded failures and current workarounds, not a new execution of the matrix or confirmation against newer framework releases. No external issues have been filed. Historical details below describe the code at the time of each failure; a working workaround does not establish that its underlying framework limitation has been fixed.
 
-| Finding | Current disposition | Next action before filing |
+| Primary classification | Entries | Meaning |
+| --- | ---: | --- |
+| Framework candidate | 11 | Observed behavior warrants an upstream defect investigation; package ownership still needs a reduced reproduction |
+| Framework improvement | 5 | Interop documentation, diagnostics or capability configuration; no correctness defect established |
+| Application/test | 22 | Our mappings, handlers, configuration, fixtures, tests or remaining port work |
+| Reference application | 3 | Java sample behavior or schema; not automatically a Pyronaut issue |
+| Environment | 5 | Interpreter/toolchain, container capability, network trust or database provisioning |
+| Unresolved | 4 | Evidence does not yet distinguish application setup from a library/runtime defect |
+
+Counts assign each PORT identifier once. Mixed entries have separately named parts below; their secondary improvement opportunities are not additional bugs. Of the 11 framework candidates, **10 should initially be investigated through the Pyronaut integration and one (PORT-046) through Micronaut Data**. This is a routing recommendation, not a claim of 10 proven Pyronaut defects.
+
+### Complete disposition
+
+| Finding | Primary classification | Owner, reasoning and disposition |
 | --- | --- | --- |
-| PORT-001 | Open script-route executor candidate; class-controller workaround verified | Reduce the script scheduling failure independently of transaction priority |
-| PORT-002 | Local compiler/Polyglot mismatch; interpreter fallback | Align versions and establish whether SDK dependency selection causes the mismatch |
-| PORT-003 | CPython project environment incompatible with embedded pytest | Reduce CLI interpreter selection and confirm supported configuration |
-| PORT-004 | Resource discovery/caller-sensitive invocation candidates; application workaround verified | Reduce the two resource access failures separately |
-| PORT-005–007 | Resolved error mapping, image capability and local registry trust problems | Retain as port/environment history; no Pyronaut defect established |
-| PORT-008 | Explicit Test Resources resolver required | Confirm whether automatic resolver inference is intended |
-| PORT-009 | Java duration coercion handled in the application | Document supported conversion behavior |
-| PORT-010 | Period normalization workaround verified | Reduce interval conversion/comparison against the driver and Data version |
-| PORT-011–014 | Resolved application choices/mapping/formatting issues | Keep regression coverage; concurrent upsert check remains open |
-| PORT-015 | Validation path interop behavior; workaround verified | Reduce path coercion and document the supported API |
-| PORT-016–019 | Document mapping, validation and local error-handler adaptations | Consult individual entries; distinguish SDK gaps from application differences |
-| PORT-020 | Transitive annotation binding candidate; explicit import works | Reduce missing `Transactional` binding with only `OracleTransactional` imported |
-| PORT-021 | Repository entities can be Java mirrors | Document construction/enum normalization at the language boundary |
-| PORT-022 | Enum query conversion candidate; text conversion works | Reduce lowercase enum route binding and inspect converter registration |
-| PORT-023 | Resolved baseline schema naming difference | Keep the additive migration; no upstream issue needed |
-| PORT-024 | Embedded Python thread capability limitation | Confirm supported runtime thread configuration; Java async verification works |
-| PORT-025 | Expected contextual datasource proxy behavior | No upstream issue needed for the independent probe correction |
-| PORT-026 | Java exception handling interop behavior | Reduce and document explicit foreign exception catches |
-| PORT-027 | Corrected container-copy configuration shape | Consider a configuration diagnostic for silently ignored maps |
-| PORT-028 | Test Resources server resource-classpath candidate | Reduce application classpath versus server classpath resource visibility |
-| PORT-029 | Service scope, lookup/delete operations and pet-type rename aligned and verified | Continue the broader model/repository contract audit |
-| PORT-030 | Successful vet and owner-search JSON contracts aligned and verified; extra visit form handler removed | Continue the remaining content-type/error response comparison |
-| PORT-031 | Reference accepts cross-owner pet URLs | Preserve its behavior for this clean port; file any desired reference change separately |
-| PORT-032 | Reference validation/error rendering fails in several core workflows | File against the reference with the recorded requests and traces; port parity remains under review |
-| PORT-033 | JSON fixtures beside Python test files are absent from generated test sources | Store them in configured test resources and load through `Environment` |
-| PORT-034 | Vet persistence creator workaround verified | Retain repository/query/cache coverage |
-| PORT-035 | Nested Python repository inheritance emits invalid generic bridge methods | Workaround passes Oracle, H2, PostgreSQL and MySQL; reduce before filing |
-| PORT-036 | Legacy visits and five pet-date differences corrected by new guarded migrations | Keep canonical fixture tests; retain applied migration checksums |
-| PORT-037 | Missing H2 settings are claimed by the Test Resources JDBC resolvers | Embedded settings and all external Test Resources profiles verified; packaged fallback still pending |
-| PORT-038 | Reference H2 schema creates scale-zero decimal prices | Record the reduced data-loss reproduction; retain fractional prices in dialect migrations |
-| PORT-039 | Inherited Python query methods pick up another dialect's SQL | Explicit signatures pass all four database profiles; reduce inherited ownership before filing |
-| PORT-040 | JUnit suite skip count disagrees with its skipped test elements | Reduce with one skipped pytest case and compare suite attributes with child elements |
-| PORT-041 | Explicit empty GET URI removed two controller root routes | Bare `@Get` restored both roots; full Oracle suite passes |
-| PORT-042 | Core SQL seed migrations do not honor the reference's sample-data switch | Separate conditional fixture loading from schema migrations while preserving applied Oracle migration history |
-| PORT-043 | Deferred fixture-loader experiment cannot find its JSON resource on enabled startup | Experiment removed; reduce resource packaging/visibility before revisiting PORT-042 |
-| PORT-044 | Newer reference vet CRUD/ETag contracts were absent from the older port | Ported and covered; application feature gap, not an SDK defect |
-| PORT-045 | Nullable integer collections and foreign nulls lose expected Python null behavior | Explicit ID binding/validation workaround; reduce the SDK conversion before filing |
-| PORT-046 | Generated PostgreSQL ETag expression fails to quote uppercase mapped identifiers | Computed aliases preserve generated locking; reduce the annotation processor expression before filing |
-| PORT-047 | MySQL routine creation fails with binary logging and no SUPER privilege | Configure only the local Test Resources container; provision external databases appropriately |
-| PORT-048 | Declared text validation limits exceed database capacity | Add widening/character-semantics migrations and Unicode boundary tests |
-| PORT-049 | A service test assumed a removed legacy visit had ID 1 | Resolve a real fixture through the repository; no upstream defect |
-| PORT-050 | Java enum mirrors expose names differently from Python enums | Normalize a callable or property name; direct repository tests cover the boundary |
+| PORT-001 | Framework candidate | **Pyronaut script/executor integration.** Explicit blocking execution hangs script routes, while class controllers work. Retain the class-controller workaround; reduce scheduling before assigning the underlying runtime cause. |
+| PORT-002 | Environment | **Local JVM/Polyglot versions.** Incompatible compiler versions cause interpreter fallback. Align the toolchain; SDK compatibility preflight is an improvement. Reassign only if SDK dependency selection itself creates the mismatch. |
+| PORT-003 | Environment | **Test interpreter setup.** CPython 3.14 is not the matching embedded GraalPy environment. Preserve the separate environment; request CLI interpreter selection/early diagnostics as an improvement, not a Python-runtime correctness fix. |
+| PORT-004 | Unresolved | **Resource discovery and caller-sensitive Java invocation are separate failures.** `Environment` loading works. Isolate packaging/classloader selection from restricted MethodHandle access before routing to Pyronaut, GraalPy or application configuration. |
+| PORT-005 | Application/test | **Our error mapping.** A generic handler produced 500 for a missing entity; a specific 404 handler fixes it. No framework handler-precedence defect established. |
+| PORT-006 | Environment | **Oracle image capability.** The slim image lacks the required spatial type. Selecting the regular image fixes provisioning; no Pyronaut issue. |
+| PORT-007 | Environment | **Docker/network certificate trust.** Reuse the cached image. An image download failure is not a framework defect. |
+| PORT-008 | Application/test | **Test Resources server dependencies.** Explicit resolver modules fix startup. Automatic inference or a missing-resolver diagnostic is an SDK improvement only if that behavior is intended. |
+| PORT-009 | Framework improvement | **Interop documentation.** Java duration conversion to `timedelta` requires application normalization; no stored-value loss was demonstrated. Document the supported representation. |
+| PORT-010 | Unresolved | **Period conversion/comparison.** Normalization fixes the bound, but the cause could be application expectations, Data conversion or the Oracle driver. Compare all three before filing. |
+| PORT-011 | Application/test | **Our upsert response design.** Re-read the persisted natural key instead of assuming the candidate sequence ID. The entry records a precaution, not a captured wrong-ID defect. Concurrent first insertion remains an application verification task. |
+| PORT-012 | Application/test | **Our HTML formatting.** Decimal scale in display is an application responsibility. Two-digit formatting is fixed; no precision-loss claim follows from `65.1`. |
+| PORT-013 | Application/test | **Our constructor mappings.** Nullable back-references must match the Java persistence constructor. Fixed while preserving validation constraints. |
+| PORT-014 | Application/test | **Our validation-message keys.** Fixed by reading node names; the constraint engine did reject invalid values. Related SDK documentation opportunity is PORT-015. |
+| PORT-015 | Framework improvement | **Validation-path interop API/documentation.** An iterable path becomes a node list, so stringifying it is unsuitable. Document node traversal or offer a path formatter; no validation-engine defect established. |
+| PORT-016 | Framework candidate | **Pyronaut AST / Data metadata integration.** `findField` cannot see a declared Python entity field. Explicit column mappings work; reduce field exposure rather than treating every JSON-view error as application mapping. |
+| PORT-017 | Unresolved | **Oracle JSON / LocalDate compatibility.** The time-bearing Oracle value fails the date-only deserializer. An explicit format fixes it, but the Java/Python behavior under identical mappings has not been isolated; do not assign it to Pyronaut yet. |
+| PORT-018 | Framework candidate | **Mixed:** wrong field-level annotation was ours (**018a**); correct element-level `@Valid` still fails to cascade (**018b**, Pyronaut type-use metadata / Validation candidate). Retain manual traversal and file only the correctly annotated case. |
+| PORT-019 | Application/test | **Our API error contract.** Explicit JSON/domain handling fixes the HTML 404 response. The current centralized handlers supersede the historical controller-local workaround. |
+| PORT-020 | Framework candidate | **Pyronaut annotation-binding generation.** A generated binding imports an ungenerated transitive annotation module. Explicitly importing both annotations is a workaround, not a normal missing application dependency. |
+| PORT-021 | Framework improvement | **Repository-return interop documentation.** Java mirrors are not Python dataclasses; `dataclasses.replace` is inapplicable. Document construction/enum normalization; native-dataclass ergonomics are a separate enhancement. |
+| PORT-022 | Framework candidate | **Pyronaut HTTP enum conversion.** Lowercase reference inputs fail generated binding. String conversion works. Confirm enum converter registration and Java/Python equivalence before choosing Pyronaut versus Core ownership. |
+| PORT-023 | Application/test | **Our schema names.** Align speciality tables/columns with the source through additive migrations. Fixed; no upstream issue. |
+| PORT-024 | Framework improvement | **Embedded runtime capability/configuration.** Python threads are disabled in this context. Document or expose supported configuration if available; this is not evidence that HTTP requests cannot overlap. Java async priority checks do overlap. |
+| PORT-025 | Application/test | **Our lock probe.** A contextual datasource proxy requires its transaction context. An independent physical connection fixes the probe; expected transaction behavior. |
+| PORT-026 | Framework improvement | **Foreign-exception documentation.** Explicit Java exception catches work where Python `Exception` does not. Document the hierarchy; the expected ORA-00054 lock result is not a persistence failure. |
+| PORT-027 | Framework candidate | **Mixed:** wrong map shape was ours (**027a**); the SDK schema rejects the working runtime list-of-maps shape (**027b**). Investigate schema generation/config metadata ownership. Also improve diagnostics for silently ignored shapes. |
+| PORT-028 | Application/test | **Separate-process resource configuration.** The Test Resources server does not automatically share the application's classpath. Host-path copying works. SDK resource resolution/docs could improve; no promised application-classpath visibility is established. |
+| PORT-029 | Application/test | **Our service/model fidelity.** Scope, operations, naming and interception differences are port corrections. Recorded fixes are retained; broader helper equivalence remains an audit task. The older shared HTML/JSON cache description predates PORT-044's separate vet CRUD service. |
+| PORT-030 | Application/test | **Our contract tests and older port behavior.** Fixed against the then-current reference. Its three-field vet payload is historical: PORT-044 supersedes that contract with current DTOs, specialities and ETags. |
+| PORT-031 | Reference application | **Source ownership policy.** Cross-owner paths/reassignment are reference behavior. Preserve the requested parity; any stricter policy is a separate product/reference decision, not a Pyronaut fix. |
+| PORT-032 | Reference application | **Source error handlers/rendering.** Wrong parameter lookup and creation/edit context are Java sample defects. Reconfirm against the current reference before filing; unsupported content-type status behavior may require a separate Core reproduction. |
+| PORT-033 | Application/test | **Our fixture placement.** Generated Python test sources are not an automatic copy of arbitrary adjacent files. Configured test resources work. A clearer resource guide is an improvement, not a demonstrated compiler defect. |
+| PORT-034 | Application/test | **Our persistence creator.** The port omitted the Java reference's persisted-fields-only creator. Matching `@Creator` fixes it; no evidence that transient collections themselves are unsupported. |
+| PORT-035 | Framework candidate | **Pyronaut generic bridge generation.** Nested repository inheritance emits signatures that clash or fail to override. The Java structure compiles; retain the verified direct-CRUD workaround and reduce generated signatures. |
+| PORT-036 | Application/test | **Our sample fixtures.** Extra legacy visits and five wrong pet dates are corrected by guarded new migrations. Preserve applied checksums and user data; no framework issue. |
+| PORT-037 | Application/test | **Our H2 datasource configuration.** Explicit embedded URL/credentials fix startup. Test Resources claiming unresolved keys merits clearer diagnostics; absence of an H2 container resolver is not itself a defect. Packaged fallback is unverified. |
+| PORT-038 | Reference application | **Source decimal DDL.** Scale-zero H2 `DECIMAL` loses fractions as declared. The reference schema/mapping needs a fix; ours explicitly preserves scale. A Data schema-generation claim needs an annotation-contract reproduction first. |
+| PORT-039 | Framework candidate | **Pyronaut AST / Data query specialization.** Inherited queries execute SQL from another dialect despite correct bean selection. Redeclarations fix all profiles. Reduce owning-type metadata; not a missing spatial extension. |
+| PORT-040 | Framework candidate | **Pyronaut test reporting.** Archived XML directly contradicts its child counts and drops parameter identities. Fix the report producer; this does not indicate the skipped features passed. |
+| PORT-041 | Application/test | **Our annotation translation.** Explicit empty URI was substituted for the reference's bare `@Get`. Matching the reference fixes both roots; equivalence of those annotations was never established. |
+| PORT-042 | Application/test | **Open application lifecycle gap.** Core SQL seeds ignore `petclinic.sample-data.enabled=false`. Separate conditional fixtures safely from schema migration history; the framework already supports conditional beans. |
+| PORT-043 | Unresolved | **Removed fixture experiment.** Its resource lookup failure is historical and not reproducible from the current tree. First establish processed-resource presence and context configuration; no upstream owner assigned. |
+| PORT-044 | Application/test | **Our feature lag.** New vet CRUD/ETags/exception contracts are ported. A Python method name colliding with Java's `new` keyword was corrected locally; no separate framework defect demonstrated. |
+| PORT-045 | Framework candidate | **Mixed:** nullable typed IDs becoming zero (**045a**) warrant a binding/serialization defect investigation; `ForeignNone` identity in object collections (**045b**) is an interop adaptation. Reject malformed inputs before deduplication in our code. |
+| PORT-046 | Framework candidate | **Micronaut Data ETag SQL generation.** Unquoted mapped identifiers break PostgreSQL. Generated lowercase aliases are our workaround; prove the Java control before describing this as Pyronaut-specific. PostgreSQL identifier folding is expected. |
+| PORT-047 | Environment | **MySQL provisioning.** Binary-log routine-creation requirements are server policy. Local container settings fix tests; external databases need suitable DBA provisioning, not an SDK code change. |
+| PORT-048 | Application/test | **Our validation/storage mismatch.** Widening descriptions and Oracle character semantics fixes accepted Unicode text exceeding storage. Keep additive migrations and boundary coverage. |
+| PORT-049 | Application/test | **Our test fixture assumption.** ID 1 was intentionally removed by exact legacy cleanup. Resolve a real visit instead; fixed, no upstream issue. |
+| PORT-050 | Application/test | **Mixed:** enum mirror normalization (**050a**) is an application interop adaptation related to PORT-021; missing write transaction in the lock test (**050b**) was a test setup error. MySQL correctly rejects locking in a read-only transaction. |
+
+### Framework defect investigation queue
+
+Priorities below reflect potential impact without our workarounds, not current failures in the stabilized port. **Strong evidence** means a concrete failing artifact, source mechanism or controlled workaround is recorded; it does not establish the responsible package or a defect in the latest release. **Tentative evidence** needs a tighter behavioral control before filing.
+
+| Order | Candidate and likely first owner | Evidence / impact | Smallest useful reproduction and acceptance condition |
+| ---: | --- | --- | --- |
+| 1 | PORT-045a — Pyronaut binding / Serialization | Strong: nullable integer elements change meaning; input integrity | One DTO with `list[int \| None]`, explicit boxed-integer variant and an echo route. Send `[null]`, `[0]`, `[1]`; inspect raw deserialized values and generated metadata. Null must remain null. Compare a Java DTO to separate Serde from the Python binding layer. |
+| 2 | PORT-018b — Pyronaut type-use metadata / Validation | Strong: invalid nested data reaches Oracle | Parent with `list[Annotated[Child, Valid]]`; child with `NotBlank`. Invoke `Validator` without a database and inspect generic-argument annotations. A blank child's violation must include its collection path; compare the Java equivalent. Exclude the incorrect original field annotation. |
+| 3 | PORT-035 — Pyronaut compiler | Strong: generated Java does not compile | One shared generic CRUD protocol and one dialect subclass. Attach generated signatures and javac errors beside the compiling Java equivalent. Generated methods must preserve bounds/wildcards and implement the interface. |
+| 4 | PORT-039 — Pyronaut / Data metadata | Strong: wrong-dialect SQL at runtime | One inherited annotated query and two dialect implementations. Inspect each generated query independently and together. Each must retain its owning implementation's dialect; include a Java control before narrowing ownership. |
+| 5 | PORT-001 — Pyronaut script execution | Tentative ownership: route hangs; class-controller control works | Same trivial route as a script and class controller, with/without `ExecuteOn`. Capture timeouts and thread/context evidence, without Oracle or priority transactions. Blocking requests must complete and independent requests must overlap. |
+| 6 | PORT-016 — Pyronaut class elements / Data visitor | Strong: declared field invisible to `findField` | One Python entity with `id` and one JSON subview, without explicit `MappedProperty`. Dump property/field metadata and compare Java. Processing must see the declared field or Data must use a supported property lookup. |
+| 7 | PORT-020 — Pyronaut annotation bindings | Strong: generated import targets missing module | Import only `OracleTransactional` plus the Jakarta transactional annotation. Process/start a minimal bean; inspect generated imports. Every imported stereotype binding must be present without a redundant application import. |
+| 8 | PORT-046 — Micronaut Data processor | Strong: generated expression and PostgreSQL trace agree | Minimal Java and Python entities with quoted uppercase ETag input columns. Inspect `GeneratedETagUtils` output and perform one PostgreSQL read/update without aliases. Expression identifiers must follow dialect quoting while retaining generated optimistic locking. |
+| 9 | PORT-027b — Pyronaut configuration schema / Test Resources metadata | Strong: working runtime shape is schema-invalid | Submit the same list-of-maps copy configuration to SDK validation and the runtime provider. Attach generated schema and provider contract. Validation must accept the supported shape without suppression; investigate whether schema generation or upstream metadata declares the wrong type. |
+| 10 | PORT-040 — Pyronaut test report producer | Strong: archived XML proves inconsistency | One pass, one skip and a parameterized test. Compare XML attributes with emitted children and parameter IDs. Counts must agree and each parameter case must be identifiable. No database needed. |
+| 11 | PORT-022 — Pyronaut HTTP conversion / Core | Tentative ownership: lowercase binding fails | One enum query route, Python and Java equivalents. Compare uppercase, lowercase, missing and invalid values plus converter registration. Supported lowercase values must bind; invalid values must produce the agreed client-error response. Isolate conversion from our generic HTML handler. |
+
+File one issue per independently reproducible cause. PORT-035 and PORT-039 are related metadata areas but exhibit distinct compilation and query-specialization failures. PORT-014/015 describe one message-path chain, not two validation bugs; PORT-021/050a describe the same family of mirror adaptations. PORT-027a and PORT-027b must not be merged into a report claiming the original invalid configuration was correct.
+
+### Framework improvements worth proposing
+
+These are enhancement/documentation requests, not additions to the defect count. Group related symptoms before filing:
+
+- **Toolchain and interpreter selection (PORT-002/003):** compatibility checks before launch, an actionable interpreter mismatch message and explicit supported test-environment selection. First establish which versions/configuration the SDK actually chose.
+- **Interop guide (PORT-009/015/021/026/045b/050a):** duration representations, validation-node traversal, repository mirror construction, enum names, foreign null checks and catching foreign exceptions. Offer convenience APIs only where their contract is clear; document the current supported path first.
+- **Runtime capability guide (PORT-024):** document Python thread restrictions and supported context options. Preserve Java async as the already verified way to exercise overlapping requests; do not imply concurrency is unsupported generally.
+- **Test Resources diagnostics (PORT-008/027a/028/037):** explain missing server modules, reject unsupported copy shapes instead of silently ignoring them, explain server versus application classpaths, and identify unsupported lazy datasource resolution clearly. Automatic inference/resource staging is an enhancement unless a supported contract promises it.
+- **Test data packaging guide (PORT-033):** show configured test resource directories and loading through `Environment`; explain the generated Python source directory boundary.
+
+### Unresolved investigations and our remaining backlog
+
+Do not file PORT-004, PORT-010, PORT-017 or PORT-043 as confirmed Pyronaut defects yet:
+
+- **PORT-004:** create separate controls for resource bundle discovery, `Environment` lookup and caller-sensitive invocation. Check that the resource is packaged before blaming a classloader; route restricted Java lookup separately if reproducible without resource access.
+- **PORT-010:** compare normalized/unnormalized periods through direct JDBC, Java Data and Python Data using the same stored interval. Inspect bound values and database comparisons; this determines application normalization versus library/driver ownership.
+- **PORT-017:** the local Java `OwnerCareView` uses `LocalDate` without our optional-time `JsonFormat`. Compare actual Oracle JSON and Java/Python deserializers with identical versions/mappings. A formatting workaround alone does not prove a Python compiler defect.
+- **PORT-043:** the failed loader experiment was removed. Reconstruct a resource-only example before revisiting seeding, inspect the processed artifact, and establish the supported fresh-context configuration. Existing `Environment` loading succeeds elsewhere; do not combine this with PORT-004 or PORT-028 without a shared cause.
+
+**PORT-042 remains the clearest open application correctness task:** the disabled sample-data flag does not suppress core SQL fixtures. Address it later through conditional loading with separate enabled/disabled/restart checks and a migration-history plan. Do not rewrite applied Oracle checksums or remove user rows. PORT-043 does not turn this application gap into a framework defect.
+
+Other still-unverified application work is concurrent first catalog insertion (PORT-011), broader model/helper equivalence (PORT-029), remaining failure-contract comparisons (PORT-030/032), pet reassignment parity (PORT-031), packaged datasource fallback (PORT-037), browser behavior and remote CI. These are coverage or port-completeness tasks, not demonstrated framework bugs. Resolved application entries should remain historical records rather than being reopened as upstream issues.
+
+The unnumbered verification notes also belong to application/test work: cookie-jar precedence affected locale test setup, and expecting JavaScript-populated results in initial HTML was an incorrect template-test assumption. Browser/CDN availability, packaged resources, production configuration and remote CI need their own evidence before any framework attribution.
+
+### Evidence and filing procedure
+
+This triage checked the current Python care-record and vet implementations, configuration suppression, local Java `OwnerCareView`, local Data `MappedEntityVisitor`/`GeneratedETagUtils`, and Test Resources `TestContainerMetadataSupport`, alongside the recorded failures. Local framework source checkouts support the investigation; establish the exact dependency/source revision in each reduced reproduction before treating them as the installed binary's implementation.
+
+The preserved H2 report at `__pyronaut__/reports/review-20261026/h2/junit.xml` was read directly during triage: 121 child cases, 20 skipped children, but suite attributes `tests="81"` and `skipped="0"`. Ten testcase identities repeat across parameterized children. This confirms the recorded reporting inconsistency without rerunning tests. Generated reports remain local/ignored and must be attached explicitly when filing.
+
+For each candidate, record the installed versions above, original failure, smallest standalone source, generated metadata/SQL or traceback, Java control where relevant, workaround and expected behavior. Reconfirm on a supported aligned toolchain and check whether the issue already exists or is fixed before filing. A single startup failure causing many test failures is one cause, not one issue per failed test. No application/framework code was changed and no new tests were run for this triage.
 
 ## Detailed findings
 
@@ -175,7 +249,7 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 - **Reproduction:** Validate a Python form with empty required fields, then inspect `type(violation.getPropertyPath())` and its string representation.
 - **Impact:** Field-specific HTML error messages and JSON field-error keys are incorrect even though validation itself rejects the values. This explains PORT-014.
 - **Resolution (verified):** Iterate path nodes and use `getName()` (plus container indices for nested document validation). Form field messages and nested document validation paths passed their integration checks.
-- **Issue disposition:** Application adaptation under verification; consider documenting iterable conversion and its effect on validation paths in the SDK.
+- **Issue disposition:** Resolved application adaptation; framework documentation/API improvement for iterable conversion and validation-path formatting, not an established constraint-validation defect.
 
 ### PORT-016 — JSON view processing cannot find a declared Python entity field
 
@@ -183,7 +257,7 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 - **Observed:** Processing the translated owner-care subviews failed with `Json View property id doesn't exist in the defined entity class Pet`, although the Python `Pet` dataclass declares an annotated `id` field and ordinary JDBC queries use it successfully.
 - **Source evidence:** `MappedEntityVisitor.validateJsonViewProperty` checks the referenced entity with `ClassElement.findField(propertyName)` and skips that check for an explicit `@MappedProperty`.
 - **Impact:** The direct Java annotation translation does not process with the current SDK.
-- **Workaround (processing verified):** Declare explicit column mappings and nested join columns on the Python JSON view classes; preserve the reference's JSON property names and update-only operations. Processing succeeds and Oracle creates the migration-managed view. Runtime document reading is a separate unresolved problem below.
+- **Workaround (verified):** Declare explicit column mappings and nested join columns on the Python JSON view classes; preserve the reference's JSON property names and update-only operations. Processing succeeds and Oracle creates the migration-managed view. Runtime reading subsequently passed with PORT-017's date-format workaround; that does not fix the original field-lookup limitation.
 - **Fix needed:** Reduce to a Python entity/view reproduction and check whether Python class elements expose declared fields through the lookup used by Data. No SDK patch has been made in this repository.
 
 ### PORT-017 — Oracle date values fail owner-care JSON deserialization (workaround verified)
@@ -209,7 +283,7 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 - **Reproduction:** GET `/owners/999999/care-record` with `Accept: application/json` and inspect the content type/body, not only the status.
 - **Impact:** API clients cannot rely on the reference's JSON error contract.
 - **Resolution (verified):** Match the reference controller's local `NotFoundException` handler and explicitly produce JSON for that handler. Missing-owner GET and PUT now retain the API error contract; ordinary pages retain the global HTML 404 view.
-- **Issue disposition:** Missing controller-local error mapping in the port; not currently an SDK defect claim.
+- **Current implementation:** The newer exception port uses the shared `entity_not_found` helper and global JSON `HttpStatusException` handler instead of that original local workaround. This remains an application error-contract correction, not an SDK defect claim.
 
 ### PORT-020 — Oracle transactional annotation binding omits its required stereotype import
 
@@ -263,13 +337,14 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 - **Observed:** The requests genuinely overlap, but the Oracle HIGH/MEDIUM wait targets remain `2147483647`, so HIGH waits until LOW commits and then reports the appointment as taken.
 - **Source evidence:** Test Resources 4.1.0's `extractMapFrom` accepts a list of maps for `copy-to-container`; a plain map is silently ignored. Its own configuration test uses a YAML list. The first TOML translation used a normal table.
 - **Resolution (verified):** Use a TOML array of tables (`[[test-resources.containers.oracle.copy-to-container]]`), plus the project-file source in PORT-028. The initializer now enables real priority takeover without any privileged test override.
-- **Issue disposition:** Port configuration correction. The Python request scheduler is not serialized in this failure: HIGH's service entry was logged about 50 ms after LOW's entry, while LOW still held its row lock.
+- **Separate schema mismatch (PORT-027b):** The SDK configuration schema expects an object and rejects this working runtime list-of-maps shape. The final matrix enables validation with only `test-resources.containers.oracle.copy-to-container` suppressed in `pyproject.toml`. Investigate schema generation versus Test Resources metadata; accepting the correct runtime shape is a framework candidate independent of the original application mistake (PORT-027a).
+- **Issue disposition:** Mixed application correction and framework schema candidate. The Python request scheduler is not serialized in the original failure: HIGH's service entry was logged about 50 ms after LOW's entry, while LOW still held its row lock.
 
 ### PORT-028 — Test Resources server cannot load the application's startup SQL from its classpath
 
 - **Observed:** After correcting the container-copy list shape, startup failed with a `TestResourcesException` identifying the server's `AppClassLoader`. The copied SQL was specified as `classpath:oracle/01-priority.sql`; application resources are not exposed through that server classloader in this CLI setup.
 - **Workaround (verified):** Copy `config/oracle/01-priority.sql` using a host path when running the SDK from the project root. Both priority HTTP checks pass with automatic setup and no diagnostic override. The script remains bundled as a resource. The [image entrypoint source](https://raw.githubusercontent.com/gvenzl/oci-oracle-free/main/container-entrypoint.sh) documents the initialization-script execution path.
-- **Issue disposition:** Test Resources/CLI resource-classpath integration candidate. The SQL file exists and application-side resource loading is already verified separately.
+- **Issue disposition:** Separate-process resource configuration adaptation; resource staging/documentation could improve. The SQL file exists and application-side resource loading is verified separately, but this does not establish a contract that the Test Resources server shares the application's classpath.
 
 ### PORT-029 — Baseline service contract and pet-type table differ from the reference
 
@@ -284,6 +359,7 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 - **Evidence:** Captured successful JSON bodies are retained in [the reference HTTP fixture](../tests-config/fixtures/reference-http.json). Reference source: `VetController`, `OwnerController.processFindForm`, and `VisitController.processNewVisitForm` in the local comparison checkout.
 - **Resolution (verified for successful contracts):** Restrict vet JSON to the reference fields while keeping specialities in the HTML model, return the reference owner-search representation, remove the extra visit form route, and use JSON from the translated reference visit UI and integration workflow. Captured successful payload comparisons and the workflow checks pass. Remaining failure responses are tracked separately.
 - **Issue disposition:** Application/test fidelity gap. Passing tests written around the Python baseline did not prove equality with the Java application.
+- **Later source change:** PORT-044 supersedes the historical three-field vet contract. Current vet DTOs include specialities/ETags; do not restore the older projection as a fix. The captured fixture is retained for the older comparison, not a complete current vet response specification.
 
 ### PORT-031 — Reference pet/visit operations do not enforce owner-path membership
 
