@@ -7,7 +7,7 @@ from micronaut.http import HttpResponse, MediaType
 from micronaut.http.server.exceptions import NotFoundException
 from micronaut.http.annotation import Body, Get, Post
 from micronaut.views import View
-from petclinic.forms import PetForm
+from petclinic.dtos.patients import PetForm
 from petclinic.mapper import FormMapper
 from petclinic.services.clinic import ClinicService
 from petclinic.errors import entity_not_found

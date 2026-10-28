@@ -3,7 +3,8 @@
 from typing import Annotated
 from jakarta.inject import Inject, Singleton
 from jakarta.transaction import Transactional
-from petclinic.clinics import Clinic, ClinicServiceOffering, ClinicServiceOfferingForm
+from petclinic.clinics import Clinic, ClinicServiceOffering
+from petclinic.dtos.clinics import ClinicServiceOfferingForm
 from petclinic.repositories.clinics import ClinicRepository, ClinicServiceOfferingRepository
 
 

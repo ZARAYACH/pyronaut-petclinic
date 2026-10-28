@@ -53,12 +53,3 @@ def with_status(appointment, status: AppointmentStatus) -> Appointment:
     # Repository results may be Java mirrors rather than native dataclasses.
     return Appointment(label=appointment.label, displayOrder=appointment.displayOrder,
                        status=status, id=appointment.id)
-
-
-@Serdeable
-@dataclass
-class OracleBookingResult:
-    appointmentId: int
-    outcome: BookingOutcome
-    databaseStatus: AppointmentStatus
-    availableAppointments: list[Appointment]

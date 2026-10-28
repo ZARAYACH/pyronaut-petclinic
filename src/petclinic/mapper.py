@@ -16,7 +16,7 @@ from jakarta.inject import Singleton
 from micronaut.context.annotation import Mapper
 
 from .entities import Owner, Pet, PetType, Visit
-from .forms import OwnerForm, PetForm, VisitForm
+from petclinic.dtos.patients import OwnerForm, PetForm, VisitForm
 
 
 @Singleton

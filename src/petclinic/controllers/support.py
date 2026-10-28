@@ -4,7 +4,7 @@ from datetime import date
 from java.net import URI
 from java.time import Duration, LocalDate, Period
 from micronaut.http import HttpResponse
-from petclinic.forms import PetForm, VisitForm
+from petclinic.dtos.patients import PetForm, VisitForm
 from petclinic.validation import violation_field
 
 

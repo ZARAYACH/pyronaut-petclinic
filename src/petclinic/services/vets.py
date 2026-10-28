@@ -9,7 +9,7 @@ from micronaut.http.exceptions import HttpStatusException
 from petclinic.entities import Speciality, Vet
 from petclinic.etags import speciality_hash
 from petclinic.repositories.vets import SpecialityRepository, VetRepository, VetSpecialityRepository
-from petclinic.vets import VetForm, SpecialityForm
+from petclinic.dtos.vets import VetForm, SpecialityForm
 
 
 def domain_error(status: HttpStatus, message: str):

@@ -11,7 +11,7 @@ from micronaut.scheduling.annotation import ExecuteOn
 from micronaut.views import View
 from petclinic.services.view_models import vet_view_models
 from petclinic.services.vets import domain_error, VetService
-from petclinic.vets import VetForm, SpecialityForm
+from petclinic.dtos.vets import VetForm, SpecialityForm
 
 
 def speciality_model(speciality) -> dict:

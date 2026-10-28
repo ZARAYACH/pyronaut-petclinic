@@ -1,18 +1,7 @@
-"""Form DTOs used for HTML form binding and validation.
-
-Micronaut can bind ``application/x-www-form-urlencoded`` request bodies into
-Python dataclasses when controller parameters are annotated with ``Body``.
-These DTOs intentionally allow ``None`` defaults so empty forms can be rendered
-and partially submitted forms can be rebound after validation errors.
-
-Validation constraints from Jakarta Validation are attached with
-``typing.Annotated``. Controllers call Micronaut's injected ``Validator`` bean
-to evaluate these constraints before mapping forms to persistent entities.
-"""
+"""Patients request, form and response DTOs."""
 
 from dataclasses import dataclass
 from typing import Annotated
-
 from java.time import Duration, LocalDate, Period
 from jakarta.validation.constraints import Min, NotBlank, Pattern, Size
 from micronaut.serde.annotation import Serdeable

@@ -1,4 +1,4 @@
-"""Veterinarian CRUD, speciality management and generated database ETags."""
+"""Vets request, form and response DTOs."""
 
 from dataclasses import dataclass, field
 from typing import Annotated
