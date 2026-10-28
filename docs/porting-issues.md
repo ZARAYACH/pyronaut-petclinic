@@ -1,10 +1,10 @@
 # PetClinic port: issue candidates and encountered problems
 
-Updated: 2026-10-16. Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
+Updated: 2026-10-27. Scope: a faithful Micronaut PetClinic port to Pyronaut, excluding Oracle Deep Data Security.
 
 This is a working log for filing issues later. No external issues have been created. Entries distinguish confirmed defects, environment problems, resolved port adaptations, and checks still in progress. A reproduction specific to this SDK is not a claim that all Pyronaut versions are affected.
 
-**Current scope:** stabilize the existing implementation. Further changes are deferred at the user's request; the backlog below is for later implementation. Oracle Deep Data Security remains excluded.
+**Latest scope:** the user authorized a full review, functionality-based tests, and the newer veterinarian ETag/exception changes. The earlier stabilization backlog remains deferred except for the corrections recorded in the [review report](review-2026-10-27.md). Oracle Deep Data Security remains excluded. The report maps all 28 Java test classes (141 methods) to Python coverage and lists remaining parity limits.
 
 ## Environment for these reproductions
 
@@ -49,7 +49,7 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 | PORT-033 | JSON fixtures beside Python test files are absent from generated test sources | Store them in configured test resources and load through `Environment` |
 | PORT-034 | Vet persistence creator workaround verified | Retain repository/query/cache coverage |
 | PORT-035 | Nested Python repository inheritance emits invalid generic bridge methods | Workaround passes Oracle, H2, PostgreSQL and MySQL; reduce before filing |
-| PORT-036 | Oracle has four extra legacy visits; five pet birth dates differ across profiles | Align canonical sample data without rewriting applied migrations or changing user-created rows |
+| PORT-036 | Legacy visits and five pet-date differences corrected by new guarded migrations | Keep canonical fixture tests; retain applied migration checksums |
 | PORT-037 | Missing H2 settings are claimed by the Test Resources JDBC resolvers | Embedded settings and all external Test Resources profiles verified; packaged fallback still pending |
 | PORT-038 | Reference H2 schema creates scale-zero decimal prices | Record the reduced data-loss reproduction; retain fractional prices in dialect migrations |
 | PORT-039 | Inherited Python query methods pick up another dialect's SQL | Explicit signatures pass all four database profiles; reduce inherited ownership before filing |
@@ -57,6 +57,13 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 | PORT-041 | Explicit empty GET URI removed two controller root routes | Bare `@Get` restored both roots; full Oracle suite passes |
 | PORT-042 | Core SQL seed migrations do not honor the reference's sample-data switch | Separate conditional fixture loading from schema migrations while preserving applied Oracle migration history |
 | PORT-043 | Deferred fixture-loader experiment cannot find its JSON resource on enabled startup | Experiment removed; reduce resource packaging/visibility before revisiting PORT-042 |
+| PORT-044 | Newer reference vet CRUD/ETag contracts were absent from the older port | Ported and covered; application feature gap, not an SDK defect |
+| PORT-045 | Nullable integer collections and foreign nulls lose expected Python null behavior | Explicit ID binding/validation workaround; reduce the SDK conversion before filing |
+| PORT-046 | Generated PostgreSQL ETag expression fails to quote uppercase mapped identifiers | Computed aliases preserve generated locking; reduce the annotation processor expression before filing |
+| PORT-047 | MySQL routine creation fails with binary logging and no SUPER privilege | Configure only the local Test Resources container; provision external databases appropriately |
+| PORT-048 | Declared text validation limits exceed database capacity | Add widening/character-semantics migrations and Unicode boundary tests |
+| PORT-049 | A service test assumed a removed legacy visit had ID 1 | Resolve a real fixture through the repository; no upstream defect |
+| PORT-050 | Java enum mirrors expose names differently from Python enums | Normalize a callable or property name; direct repository tests cover the boundary |
 
 ## Detailed findings
 
@@ -322,8 +329,8 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 
 - **Observed by source comparison:** The original Python `V2` seeds four Jean Coleman pet visits in January 2013. The reference `DataLoader` creates sixteen visits dated 2017–2026 and does not create those four older visits. The port's additive `V5` kept the baseline rows and added the sixteen reference rows, so Oracle has twenty seeded visits.
 - **Impact:** The resulting visit history is not a clean copy of the reference fixture set even though date-filter tests selecting only 2026 pass.
-- **Current action:** New database-profile migrations seed only the reference's sixteen visits. Oracle fixture alignment remains open; preserve applied migration checksums and distinguish exact baseline seed rows from user-created history before removing anything.
-- **Additional source comparison:** The original seed pet dates were copied to the other profiles and differ from `system/DataLoader.java` for these five records. Corrections are deferred with the fixture lifecycle work; no original migration was rewritten.
+- **Resolution (2026-10-27):** New migrations correct the five exact stock pet records and remove only the four Oracle visits matching all original ID/pet/date/description values. Existing migration files and checksums remain unchanged. Direct interval tests now read exactly the reference's Samantha history; date assertions run on every profile.
+- **Additional source comparison:** The original seed pet dates were copied to the other profiles and differed from `system/DataLoader.java` for these five records. The new migrations apply these corrections; the sample-data configuration/lifecycle issue remains separately open as PORT-042.
 
 | Pet / owner first name | Current seed birth date | Java reference birth date |
 | --- | --- | --- |
@@ -366,6 +373,8 @@ Use the `PORT-xxx` identifier in the eventual issue title or description. Copy t
 - **Workaround:** Read the actual child test results and the CLI summary when reporting profile coverage; do not report all 26 cases as passed.
 - **Issue disposition:** SDK pytest/JUnit reporting consistency candidate. Reduce with an unconditional `pytest.skip` before filing.
 
+During the expanded 2026-10-27 review, the final H2 XML contained **121 child cases / 20 actual skips**, while the suite attributes reported **`tests="81"` and `skipped="0"`**. Parameterized child cases also share their function name rather than retaining unique parameter IDs. The report uses child results and CLI summaries, not those suite attributes.
+
 ### PORT-041 — Empty route URI is not equivalent to a bare GET annotation
 
 - **Observed:** The first Oracle regression after converting gated routes to class controllers passed 24 cases, but GET `/visits` and GET `/knowledge` returned 404. Their search APIs, vector loading, care records and priority transactions worked. The two missing roots had been translated with `@Get('')` rather than the reference's bare `@Get`.
@@ -396,7 +405,7 @@ These items are documented proposals, not implemented additions or current stabi
 | Work | Proposed approach | Acceptance check |
 | --- | --- | --- |
 | Conditional sample data (PORT-042/043) | Prove resource packaging first; separate new-schema creation from conditional transactional loading; design an upgrade path for existing databases | Fresh disabled startup has empty shared tables; enabled startup loads canonical fixtures; restart/repeated loading preserves user rows and creates no duplicates, across all four profiles |
-| Canonical fixtures (PORT-036) | Compare reference pet dates, visit history, clinic geometry and catalog data; correct only positively identified stock rows through new migrations | Compare complete canonical records, not only filtered searches; preserve applied checksums and user-created data |
+| Remaining fixture audit | Pet dates and legacy Oracle visits are corrected (PORT-036); compare other canonical fields if further parity work is requested | Compare complete records, not only filtered searches; preserve applied checksums and user-created data |
 | Remaining source contracts (PORT-029–032) | Audit model identity/helper behavior, service/repository signatures, cross-owner writes and error/content-type responses against the running reference | Record exact request/status/body or model behavior; distinguish reference bugs from port defects before changing behavior |
 | Concurrent first catalog insert | Submit overlapping writes for a previously absent clinic/code, retaining generated upsert and uniqueness | One persisted row and identity; responses follow the chosen reference contract; no partial combined row |
 | Browser and visual parity | Compare locale switching, forms, maps, catalog pages, care editor and priority interactions with the reference | Manual browser evidence, including unavailable CDN assets and JavaScript-driven results |
@@ -413,7 +422,7 @@ Keep the source reference checkout and the user's existing CPython environment u
 - Reference-template tests need to assert the reference contract. For example, the reference clinic page renders search results through JavaScript, so expecting a seeded branch name in the initial HTML is inappropriate.
 - JSON duality and transaction priority now have passing runtime checks described below. All four database profiles have runtime coverage. Fixture lifecycle, packaged execution and the remaining model/service and HTTP contract comparison are still open work; missing coverage is not an upstream defect claim.
 
-## Latest verification checkpoint
+## Previous verification checkpoint (2026-10-16)
 
 2026-10-16 stabilization rerun: **26 integration tests passed in 49.8s** against the cached Oracle image after removing the unfinished fixture-loader experiment. The cases include ordinary PetClinic workflows, captured Java-reference vet/owner-search JSON contracts, spatial queries, catalog upserts, visit bounds, locale switching, HTML 404s, ranked vectors, nested duality updates, date/null validation, insert/delete restrictions, stale ETAGs after document and relational edits, and JSON not-found responses.
 
@@ -426,3 +435,58 @@ Additional profile results: **H2 16 passed / 10 Oracle-only skips (16.7s)**; **P
 Python source and TOML parsing and `git diff --check` also pass. Experimental loader code, lifecycle tests and unapplied experimental migration files were removed from both the repository and the isolated test copy. Original applied Oracle migration files and the user's staged `.gitignore` change were preserved. No new local image pulls, external issue filings or remote CI runs were performed.
 
 Interactive browser parity, concurrent insertion of an absent clinic/code, fixture/sample-data lifecycle alignment, remaining model/service/repository and HTTP failure-path fidelity checks, production URL fallback execution, and packaged execution remain outside this checkpoint. SDK configuration validation was skipped. Full reference parity is not claimed; further implementation is deferred at the user's request.
+
+## Findings from the 2026-10-26/27 review
+
+### PORT-044 — Current reference vet CRUD/ETag contracts were missing
+
+- **Observed:** The local reference at `0ad5747` includes veterinarian and speciality CRUD, assignment hashes, generated row ETags, forms and JSON precondition failures. The older port exposed only vet listing and its historical three-field JSON projection.
+- **Resolution:** Port the generated ETag model, native/profile-local database functions, transactional CRUD, speciality management, current DTOs, templates, source JavaScript and exception responses. Hashes cover sorted speciality IDs and exclude names. Rejected stale updates/deletes restore join rows through transaction rollback.
+- **Evidence:** Functionality modules cover lifecycle, assignment-only changes, shared speciality preservation, no-op saves, missing/blank/weak/stale tags, duplicates, malformed JSON, missing resources and text limits. See the full review report for final profile counts.
+- **Disposition:** Resolved application feature gap. It is not an upstream Pyronaut defect. A Python method initially named `new` also failed JVM generation because it is a Java keyword; the route implementation is now named `new_vet`.
+
+### PORT-045 — Nullable collection elements cross the boundary as zero or foreign nulls
+
+- **Observed:** `specialityIds: list[int | None] | None` bound `[null]` as a value that produced the unknown-ID error rather than the source's missing-ID error. An explicit Java `Integer` type did not correct that conversion. Binding as an object collection preserved a `ForeignNone` value, whose identity differs from Python `None`.
+- **Impact:** A straightforward DTO translation can lose null semantics. Converting arbitrary object inputs to a set before type validation can also fail on nested arrays/maps.
+- **Workaround:** Bind the collection at the object boundary, check Python/foreign nulls directly, reject non-integer/boolean/out-of-range values before set construction, then resolve distinct persisted IDs. Preserve the source's 400 messages. HTTP tests cover null elements, null/empty selections, nested values and the integer boundary.
+- **Disposition:** SDK null/collection conversion candidate. Reduce with one nullable collection DTO before assigning ownership or filing. Explicit validation is an application adaptation.
+
+### PORT-046 — Generated PostgreSQL ETag expression does not quote mapped identifiers
+
+- **Observed:** H2 and Oracle ETag CRUD worked. PostgreSQL then failed 24 shared checks with `ERROR: column vet_.first_name does not exist`. The mapped columns are quoted uppercase names; the synthesized ETag read expression references their unquoted names, which PostgreSQL folds to lowercase.
+- **Resolution:** `db/postgres/V5__etag_identifier_aliases.sql` adds computed lowercase aliases for first name, last name and the speciality hash. They derive from the canonical columns and cannot be independently changed. The ORM still generates and enforces the ETag predicate; no Python compare-then-write replacement was introduced.
+- **Evidence:** The first corrected PostgreSQL run passed all 84 then-current shared cases, including stale link rollback; later final coverage is in the review report. Initial failures are preserved under `__pyronaut__/reports/review-20261026/postgres-initial/`.
+- **Disposition:** Micronaut Data generated ETag transformer/identifier quoting candidate. Reduce on both Java and Python before claiming it is Python-specific.
+
+### PORT-047 — MySQL cannot create the ETag routine with ordinary fixture privileges
+
+- **Observed:** Migration `V4__vet_etags.sql` failed with MySQL error 1419: binary logging was enabled and the fixture user did not have SUPER privilege. Most suite failures were consequences of that one application-startup failure.
+- **Resolution:** Set the local Test Resources container command to `--log-bin-trust-function-creators=1`, then create the deterministic routine through the migration. The application user was not granted SUPER. The cached `mysql:8.4.5` image was reused.
+- **Evidence:** After this configuration change, all 94 then-current shared MySQL cases passed. Final counts include additional direct repository and text-limit checks.
+- **External databases:** DBA provisioning or appropriate routine-creation settings/privileges remain a deployment prerequisite. The local container command does not configure an existing production server.
+- **Disposition:** Database provisioning requirement; no SDK defect established.
+
+### PORT-048 — Valid text at the API limit exceeds schema storage limits
+
+- **Observed:** The catalog form permits 500 characters while the new H2/PostgreSQL/MySQL schemas used `VARCHAR(255)` descriptions. A real H2 request containing 500 `ñ` characters returned 500; the trace reports `DESCRIPTION CHARACTER VARYING(255)` and SQL state 22001. Oracle vet names/descriptions also used byte lengths although bean validation measures characters.
+- **Resolution:** Add new migrations widening non-Oracle descriptions to 500 characters and making the Oracle name/description limits explicit in character semantics. Original migrations are unchanged.
+- **Regression:** Round-trip 500-character Unicode descriptions and 255-character Unicode vet/speciality names. Reject a 501-character description and names exceeding the DTO limit. Initial failing artifacts are preserved under `__pyronaut__/reports/review-20261026/text-limits-before/`.
+- **Disposition:** Resolved application schema/validation mismatch.
+
+### PORT-049 — The service test assumed visit ID 1 survived canonical fixture alignment
+
+- **Observed:** The first expanded Oracle run passed the ETag, document and priority checks, but the service lookup test dereferenced a missing visit at ID 1. That ID belonged to an exact legacy seed row removed by the guarded correction.
+- **Resolution:** Obtain an existing seeded visit through `find_visits_by_pet_id` and use its actual ID for the lookup assertion. A focused Oracle run passed; the full suite repeats it.
+- **Disposition:** Resolved test-fixture assumption, not an application or upstream defect.
+
+### PORT-050 — Enum name access and transaction boundaries differ in direct repository tests
+
+- **Observed:** An appointment loaded through the SDK exposes a Python enum, while a Java enum constant/mirror can expose its name as a string property or callable accessor. Direct equality across those representations failed despite persisted status values being correct.
+- **Resolution:** Normalize both enum representations using the value/name, calling the name only when callable. The direct appointment tests cover availability ordering, updating existing rows without extra inserts, and booked-row lookup.
+- **Separate test correction:** The source `@MicronautTest` supplies a write transaction. The Python HTTP fixture intentionally does not wrap the suite in one. MySQL correctly rejected `SELECT ... FOR UPDATE` in the automatically opened read-only query transaction. The locking regression now supplies the source's write boundary explicitly; production priority methods already run in write transactions.
+- **Disposition:** Resolved interop/test adaptation. No application locking defect or upstream defect is established by the read-only test failure.
+
+## Latest verification checkpoint
+
+See [the 2026-10-27 review report](review-2026-10-27.md#final-verification) for final profile results, source-test mapping, commit scope and unresolved parity limits. Configuration validation is enabled with the single documented Test Resources suppression. No external issues or remote pushes were created.

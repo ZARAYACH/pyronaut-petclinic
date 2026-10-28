@@ -10,13 +10,21 @@ Reference links under `micronaut-petclinic/` require the local comparison checko
 
 Encountered defects and environment problems are tracked separately in the [porting issue log](porting-issues.md).
 
-## Implementation progress
+## Review and port update (2026-10-27)
+
+The user subsequently authorized a full review, the newer Java ETag/exception changes, tests split by functionality, and small commits during implementation. The [latest review report](review-2026-10-27.md) records the current verification matrix and maps all 28 Java test classes (141 test methods) to Python coverage.
+
+The current port adds vet/speciality CRUD and forms, generated database ETags with `If-Match`, central JSON domain errors, native/profile-local ETag functions, explicit management endpoints, corrected fixture values, direct repository checks, Unicode text-limit checks and source-derived geometry contracts. Configuration validation is enabled with a narrow suppression for the established Test Resources schema mismatch. The existing Java checkout and CPython environment are preserved.
+
+The earlier checkpoint below is historical. Core sample-data enable/disable/restart parity, Java model/helper equivalence, concurrent first catalog insertion, full browser behavior and packaged execution remain limited as described in the review; Oracle Deep Data Security remains excluded.
+
+## Stabilization checkpoint (2026-10-16)
 
 Updated 2026-10-16. Oracle Deep Data Security is deferred at the user's request and is excluded from the active implementation sequence.
 
-**Current scope: stabilize the implemented port.** The user requested that further additions be documented for later. The unfinished conditional fixture-loader experiment has been removed from application code, migrations and the test suite after its startup check failed (PORT-043). The established SQL fixture setup remains. The remaining work below is a deferred backlog, not an instruction to continue implementation. This checkpoint does not claim complete reference parity.
+**Scope at this checkpoint: stabilize the implemented port.** The user requested that further additions be documented for later. The unfinished conditional fixture-loader experiment was removed from application code, migrations and the test suite after its startup check failed (PORT-043). The established SQL fixture setup remained. The subsequent review and newer ETag/exception work are recorded above; this historical checkpoint does not claim complete reference parity.
 
-Verification now covers **all four database profiles** using the existing cached images. Commands ran from an isolated copy with matching GraalPy because the repository's existing `.venv` is CPython. SDK configuration validation was skipped. These are local results; the updated CI matrix has not been run remotely.
+Verification at that checkpoint covered **all four database profiles** using the existing cached images. Commands ran from an isolated copy with matching GraalPy because the repository's existing `.venv` is CPython. SDK configuration validation was skipped then; it is enabled for the later review. These are local results; the CI matrix has not been run remotely.
 
 | Profile | Passed | Intentionally skipped | Duration | Runtime |
 | --- | ---: | ---: | --- | --- |
@@ -42,7 +50,7 @@ Shared checks cover successful reference JSON contracts, owner/pet/visit workflo
 | Transaction priority | Oracle-only appointment repository, LOW/HIGH transactional service, booking/reset routes, reference UI and automatic database setup | Regular commit, taken/missing/reset cases, observed LOW row lock before HIGH, HIGH commit with LOW priority rollback, outcome classification and actual equal-priority lock timeout passed |
 | Additional database profiles | Default H2/H2GIS; PostgreSQL/PostGIS and MySQL environments; Hikari; separate schemas/fixture migrations; conditional repository beans and Oracle-only controllers/services; four-profile CI configuration | All shared checks pass on all three additional databases, with Oracle-only routes absent and beans disabled. Fixture lifecycle and reference decimal-schema differences remain tracked; remote CI has not been executed |
 
-Implementation files: [clinic feature](../src/petclinic/clinics.py), [visit search routes](../src/petclinic/visit_search.py), [integration suite](../tests/test_petclinic.py), [configuration](../config/application.toml), and [dependency declarations](../pyproject.toml).
+Implementation files: [clinic feature](../src/petclinic/clinics.py), [visit search routes](../src/petclinic/visit_search.py), [integration suites](../tests/README.md), [configuration](../config/application.toml), and [dependency declarations](../pyproject.toml).
 
 Compatibility findings to retain for later work:
 
@@ -65,7 +73,7 @@ The tables below describe the original baseline unless an implementation status 
 2. Complete remaining model/service/repository and HTTP failure-path fidelity checks and concurrent insertion of a previously absent clinic/code. Existing-key concurrent updates and environment gating are already verified across profiles.
 3. Complete distribution behavior and compare the reference and port in a browser and as packaged applications. Treat full reference parity as unverified until those requirements have evidence.
 
-No further feature additions are part of the current stabilization request. The [issue log's deferred backlog](porting-issues.md#deferred-work-for-later) records the next steps and acceptance checks.
+The original stabilization request deferred further additions. The later review/Etag/exception changes described above were separately authorized. The [issue log's deferred backlog](porting-issues.md#deferred-work-for-later) records the remaining steps and acceptance checks.
 
 ### Runtime reference comparison
 
@@ -86,7 +94,7 @@ Equal last names have no secondary ordering in the source query; H2 and Oracle r
 
 The current [Python entities](../src/petclinic/entities.py), [repositories](../src/petclinic/repositories.py), [services](../src/petclinic/services.py), [controllers](../src/petclinic/controllers.py), [forms](../src/petclinic/forms.py), and [mapper](../src/petclinic/mapper.py) implement owner creation, editing and search; pet creation and editing; visit creation and history; and veterinarian HTML and JSON output. They also demonstrate dependency injection, Jakarta validation, generated mappers, JDBC relationships, Jinjava rendering, and static resources.
 
-The [configuration](../config/application.toml) and [project dependencies](../pyproject.toml) provide Oracle JDBC with UCP, Flyway migrations, Test Resources, and development Control Panel support. The [pytest suite](../tests/test_petclinic.py) contains seven broad tests covering startup, fixtures, owner search, a form workflow, vet output, missing entities, and template rendering.
+At the original assessment baseline, the configuration and project dependencies provided Oracle JDBC with UCP, Flyway migrations, Test Resources, and development Control Panel support. The then-single pytest suite contained seven broad tests covering startup, fixtures, owner search, a form workflow, vet output, missing entities, and template rendering. The current [test guide](../tests/README.md) describes the reorganized and expanded suites.
 
 | Area | Current state | Required work |
 | --- | --- | --- |
